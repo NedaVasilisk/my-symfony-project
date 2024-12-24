@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PaymentRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PaymentRepository::class)]
 #[ORM\Table(name: "payments")]
@@ -12,19 +13,24 @@ class Payment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['payments_list', 'payments_detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Invoice::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Groups(['payments_detail'])]
     private ?Invoice $invoice = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['payments_detail'])]
     private ?\datetime $paymentDate = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Groups(['payments_detail'])]
     private ?string $amount = null;
 
     #[ORM\Column(length: 30)]
+    #[Groups(['payments_detail'])]
     private ?string $paymentMethod = null;
 
     public function getId(): ?int

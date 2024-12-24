@@ -26,10 +26,15 @@ class PartController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
+        if (empty($data['partNumber'])) {
+            return $this->json(['error' => 'partNumber is required'], Response::HTTP_BAD_REQUEST);
+        }
+
         $part = new Part();
-        $part->setName($data['name'] ?? null)
+        $part
+            ->setName($data['name'] ?? null)
             ->setManufacturer($data['manufacturer'] ?? null)
-            ->setPartNumber($data['partNumber'] ?? null)
+            ->setPartNumber($data['partNumber'])
             ->setCurrentPrice($data['currentPrice'] ?? 0)
             ->setQuantityInStock($data['quantityInStock'] ?? 0);
 
@@ -50,14 +55,23 @@ class PartController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['name'])) $part->setName($data['name']);
-        if (isset($data['manufacturer'])) $part->setManufacturer($data['manufacturer']);
-        if (isset($data['partNumber'])) $part->setPartNumber($data['partNumber']);
-        if (isset($data['currentPrice'])) $part->setCurrentPrice($data['currentPrice']);
-        if (isset($data['quantityInStock'])) $part->setQuantityInStock($data['quantityInStock']);
+        if (isset($data['name'])) {
+            $part->setName($data['name']);
+        }
+        if (isset($data['manufacturer'])) {
+            $part->setManufacturer($data['manufacturer']);
+        }
+        if (isset($data['partNumber'])) {
+            $part->setPartNumber($data['partNumber']);
+        }
+        if (isset($data['currentPrice'])) {
+            $part->setCurrentPrice($data['currentPrice']);
+        }
+        if (isset($data['quantityInStock'])) {
+            $part->setQuantityInStock($data['quantityInStock']);
+        }
 
         $entityManager->flush();
-
         return $this->json($part);
     }
 

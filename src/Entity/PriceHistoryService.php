@@ -14,20 +14,20 @@ class PriceHistoryService
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['price_history_service_list', 'price_history_service_detail'])]
+    #[Groups(['price_history_service_list'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Service::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
-    #[Groups(['price_history_service_detail'])]
+    #[Groups(['price_history_service_list'])]
     private ?Service $service = null;
 
     #[ORM\Column(type: 'datetime')]
-    #[Groups(['price_history_service_detail'])]
+    #[Groups(['price_history_service_list'])]
     private ?\DateTime $effectiveDate = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
-    #[Groups(['price_history_service_detail'])]
+    #[Groups(['price_history_service_list'])]
     private ?string $price = null;
 
     public function getId(): ?int
