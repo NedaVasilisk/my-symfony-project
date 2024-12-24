@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\RepairAssignmentRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: RepairAssignmentRepository::class)]
 #[ORM\Table(name: "repair_assignments")]
@@ -12,14 +13,17 @@ class RepairAssignment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['repair_assignment_list', 'repair_assignment_detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Repair::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Groups(['repair_assignment_detail'])]
     private ?Repair $repair = null;
 
     #[ORM\ManyToOne(targetEntity: Employee::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: "SET NULL")]
+    #[Groups(['repair_assignment_detail'])]
     private ?Employee $employee = null;
 
     public function getId(): ?int

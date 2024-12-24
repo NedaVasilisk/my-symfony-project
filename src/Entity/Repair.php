@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\RepairRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: RepairRepository::class)]
 #[ORM\Table(name: "repairs")]
@@ -12,22 +13,28 @@ class Repair
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['repair_list', 'repair_detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Vehicle::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Groups(['repair_detail'])]
     private ?Vehicle $vehicle = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['repair_detail'])]
     private ?\datetime $dateIn = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['repair_detail'])]
     private ?\datetime $dateOut = null;
 
     #[ORM\Column(length: 20)]
+    #[Groups(['repair_detail'])]
     private ?string $status = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Groups(['repair_detail'])]
     private ?string $totalCost = null;
 
     public function getId(): ?int

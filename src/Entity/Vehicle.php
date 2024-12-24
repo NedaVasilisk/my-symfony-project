@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\VehicleRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
 #[ORM\Table(name: "vehicles")]
@@ -12,34 +13,44 @@ class Vehicle
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['vehicle_list', 'vehicle_detail', 'vehicle_max'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Customer::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Groups([ 'vehicle_detail', 'vehicle_max'])]
     private ?Customer $customer = null;
 
     #[ORM\Column(length: 17, unique: true)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $vin = null;
 
     #[ORM\Column(length: 10, unique: true)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $licensePlate = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $make = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $model = null;
 
     #[ORM\Column]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?int $year = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $engineType = null;
 
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $batteryCapacity = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?\datetime $lastIotUpdate = null;
 
     public function getId(): ?int

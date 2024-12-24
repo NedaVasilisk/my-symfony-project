@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Repair;
+use App\Entity\Vehicle;
 use App\Form\RepairType;
 use App\Repository\RepairRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,7 +19,7 @@ class RepairController extends AbstractController
     public function index(RepairRepository $repairRepository): Response
     {
         $repairs = $repairRepository->findAll();
-        return $this->json($repairs);
+        return $this->json($repairs, 200, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
     #[Route('/create', name: 'app_repair_new', methods: ['POST'])]
@@ -26,7 +27,17 @@ class RepairController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
+        if (empty($data['vehicle_id'])) {
+            return $this->json(['error' => 'Vehicle ID is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicle_id']);
+        if (!$vehicle) {
+            return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
+        }
+
         $repair = new Repair();
+        $repair->setVehicle($vehicle);
         $repair->setDateIn(new \DateTime($data['dateIn'] ?? 'now'));
         $repair->setDateOut(isset($data['dateOut']) ? new \DateTime($data['dateOut']) : null);
         $repair->setStatus($data['status'] ?? 'Pending');
@@ -41,13 +52,21 @@ class RepairController extends AbstractController
     #[Route('/{id}', name: 'app_repair_show', methods: ['GET'])]
     public function show(Repair $repair): Response
     {
-        return $this->json($repair);
+        return $this->json($repair, 200, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
     #[Route('/{id}/edit', name: 'app_repair_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Repair $repair, EntityManagerInterface $entityManager): Response
     {
         $data = json_decode($request->getContent(), true);
+
+        if (isset($data['vehicle_id'])) {
+            $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicle_id']);
+            if (!$vehicle) {
+                return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
+            }
+            $repair->setVehicle($vehicle);
+        }
 
         if (isset($data['dateIn'])) $repair->setDateIn(new \DateTime($data['dateIn']));
         if (isset($data['dateOut'])) $repair->setDateOut(new \DateTime($data['dateOut']));

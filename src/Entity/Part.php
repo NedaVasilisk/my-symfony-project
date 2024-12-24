@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PartRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PartRepository::class)]
 #[ORM\Table(name: "parts")]
@@ -12,21 +13,27 @@ class Part
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['part_list', 'part_detail'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['part_detail'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['part_detail'])]
     private ?string $manufacturer = null;
 
     #[ORM\Column(length: 50, unique: true)]
+    #[Groups(['part_detail'])]
     private ?string $partNumber = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Groups(['part_detail'])]
     private ?string $currentPrice = null;
 
     #[ORM\Column]
+    #[Groups(['part_detail'])]
     private int $quantityInStock = 0;
 
     public function getId(): ?int

@@ -19,7 +19,7 @@ class UserController extends AbstractController
     {
         $users = $userRepository->findAll();
 
-        return $this->json($users);
+        return $this->json($users, 200, [], ['groups' => ['user_detail', 'role_list']]);
     }
 
     #[Route('/create', name: 'app_user_new', methods: ['POST'])]

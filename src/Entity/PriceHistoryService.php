@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PriceHistoryServiceRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PriceHistoryServiceRepository::class)]
 #[ORM\Table(name: "price_history_services")]
@@ -13,19 +14,21 @@ class PriceHistoryService
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['price_history_service_list', 'price_history_service_detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Service::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Groups(['price_history_service_detail'])]
     private ?Service $service = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['price_history_service_detail'])]
     private ?\DateTime $effectiveDate = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Groups(['price_history_service_detail'])]
     private ?string $price = null;
-
-    // Геттери та сеттери
 
     public function getId(): ?int
     {

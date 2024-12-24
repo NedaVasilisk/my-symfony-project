@@ -11,14 +11,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/repair/item')]
+#[Route('/repair-item')]
 class RepairItemController extends AbstractController
 {
     #[Route('/', name: 'app_repair_item_index', methods: ['GET'])]
     public function index(RepairItemRepository $repairItemRepository): Response
     {
         $repairItems = $repairItemRepository->findAll();
-        return $this->json($repairItems);
+        return $this->json($repairItems, 200, [], ['groups' => ['repair_item_detail', 'repair_list', 'service_list']]);
     }
 
     #[Route('/create', name: 'app_repair_item_new', methods: ['POST'])]
@@ -39,7 +39,7 @@ class RepairItemController extends AbstractController
     #[Route('/{id}', name: 'app_repair_item_show', methods: ['GET'])]
     public function show(RepairItem $repairItem): Response
     {
-        return $this->json($repairItem);
+        return $this->json($repairItem, 200, [], ['groups' => ['repair_item_detail', 'repair_list', 'service_list']]);
     }
 
     #[Route('/{id}/edit', name: 'app_repair_item_edit', methods: ['PUT', 'PATCH'])]

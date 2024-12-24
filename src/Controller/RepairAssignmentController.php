@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Employee;
+use App\Entity\Repair;
 use App\Entity\RepairAssignment;
 use App\Form\RepairAssignmentType;
 use App\Repository\RepairAssignmentRepository;
@@ -11,14 +13,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/repair/assignment')]
+#[Route('/repair-assignment')]
 class RepairAssignmentController extends AbstractController
 {
     #[Route('/', name: 'app_repair_assignment_index', methods: ['GET'])]
     public function index(RepairAssignmentRepository $repairAssignmentRepository): Response
     {
         $repairAssignments = $repairAssignmentRepository->findAll();
-        return $this->json($repairAssignments);
+        return $this->json($repairAssignments, 200, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
     }
 
     #[Route('/create', name: 'app_repair_assignment_new', methods: ['POST'])]
@@ -27,7 +29,7 @@ class RepairAssignmentController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $repairAssignment = new RepairAssignment();
-        // Знайти `Repair` та `Employee` за ID, переданими в запиті
+
         $repair = $entityManager->getRepository(Repair::class)->find($data['repairId']);
         $employee = $entityManager->getRepository(Employee::class)->find($data['employeeId']);
 
@@ -47,7 +49,7 @@ class RepairAssignmentController extends AbstractController
     #[Route('/{id}', name: 'app_repair_assignment_show', methods: ['GET'])]
     public function show(RepairAssignment $repairAssignment): Response
     {
-        return $this->json($repairAssignment);
+        return $this->json($repairAssignment, 200, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
     }
 
     #[Route('/{id}/edit', name: 'app_repair_assignment_edit', methods: ['PUT', 'PATCH'])]
@@ -55,7 +57,6 @@ class RepairAssignmentController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        // Оновлення лише певних полів
         if (isset($data['repairId'])) {
             $repair = $entityManager->getRepository(Repair::class)->find($data['repairId']);
             if ($repair) $repairAssignment->setRepair($repair);

@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: "users")]
@@ -12,31 +13,40 @@ class User
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user_list', 'user_detail'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50, unique: true)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?string $passwordHash = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 100, unique: true, nullable: true)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?string $email = null;
 
     #[ORM\ManyToOne(targetEntity: Role::class)]
     #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['user_list', 'user_detail'])]
     private ?Role $role = null;
 
     #[ORM\Column(options: ['default' => true])]
+    #[Groups(['user_list', 'user_detail'])]
     private bool $isActive = true;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['user_list', 'user_detail'])]
     private ?\datetime $createdAt = null;
 
     public function getId(): ?int

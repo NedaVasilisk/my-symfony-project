@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\CustomerRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CustomerRepository::class)]
 #[ORM\Table(name: "customers")]
@@ -12,25 +13,32 @@ class Customer
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['customer_list', 'customer_detail', 'customer_max'])]
     private ?int $id = null;
 
     #[ORM\OneToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true, unique: true, onDelete: "SET NULL")]
+    #[ORM\JoinColumn(unique: true, nullable: true, onDelete: "SET NULL")]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?User $user = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 20)]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['customer_detail', 'customer_max'])]
     private ?string $address = null;
 
     public function getId(): ?int

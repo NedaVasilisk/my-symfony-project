@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\EmployeeRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: EmployeeRepository::class)]
 #[ORM\Table(name: "employees")]
@@ -12,28 +13,36 @@ class Employee
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['employee_list', 'employee_detail'])]
     private ?int $id = null;
 
     #[ORM\OneToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false, unique: true, onDelete: "CASCADE")]
+    #[ORM\JoinColumn(unique: true, nullable: false, onDelete: "CASCADE")]
+    #[Groups(['employee_detail'])]
     private ?User $user = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['employee_detail'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['employee_detail'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['employee_detail'])]
     private ?string $position = null;
 
     #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(['employee_detail'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['employee_detail'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['employee_detail'])]
     private ?string $specialization = null;
 
     public function getId(): ?int
