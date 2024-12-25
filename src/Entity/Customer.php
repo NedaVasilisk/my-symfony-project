@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CustomerRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CustomerRepository::class)]
 #[ORM\Table(name: "customers")]
@@ -18,26 +19,38 @@ class Customer
 
     #[ORM\OneToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(unique: true, nullable: true, onDelete: "SET NULL")]
+    #[Assert\Type(User::class)]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?User $user = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    #[Assert\Regex(pattern: '/^\+?[0-9]{7,20}$/', message: 'Invalid phone number')]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank]
+    #[Assert\Email]
+    #[Assert\Length(max: 100)]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     #[Groups(['customer_detail', 'customer_max'])]
     private ?string $address = null;
 

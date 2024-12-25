@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\PriceHistoryServiceRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PriceHistoryServiceRepository::class)]
 #[ORM\Table(name: "price_history_services")]
@@ -19,14 +20,19 @@ class PriceHistoryService
 
     #[ORM\ManyToOne(targetEntity: Service::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['price_history_service_list'])]
     private ?Service $service = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Assert\NotBlank]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['price_history_service_list'])]
     private ?\DateTime $effectiveDate = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     #[Groups(['price_history_service_list'])]
     private ?string $price = null;
 

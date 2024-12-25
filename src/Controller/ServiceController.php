@@ -3,12 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Service;
-use App\Form\ServiceType;
 use App\Repository\ServiceRepository;
 use App\Service\ServiceService;
-use App\Service\ServiceValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -16,67 +14,41 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/service')]
 class ServiceController extends AbstractController
 {
+    public function __construct(private ServiceService $serviceService) {}
+
     #[Route('/', name: 'app_service_index', methods: ['GET'])]
-    public function index(ServiceRepository $serviceRepository): Response
+    public function index(ServiceRepository $serviceRepository): JsonResponse
     {
         $services = $serviceRepository->findAll();
-        return $this->json($services);
+        return $this->json($services, Response::HTTP_OK);
     }
 
-    #[Route('/create', name: 'app_service_new', methods: ['POST'])]
-    public function new(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        ServiceValidator $serviceValidator,
-        ServiceService $serviceService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $serviceValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $service = $serviceService->createOrUpdateService($data);
-        $entityManager->persist($service);
-        $entityManager->flush();
-
+    #[Route('/create', name: 'app_service_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $service = $this->serviceService->createService($requestData);
         return $this->json($service, Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'app_service_show', methods: ['GET'])]
-    public function show(Service $service): Response
+    public function show(Service $service): JsonResponse
     {
-        return $this->json($service);
+        return $this->json($service, Response::HTTP_OK);
     }
 
     #[Route('/{id}/edit', name: 'app_service_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(
-        Request $request,
-        Service $service,
-        EntityManagerInterface $entityManager,
-        ServiceValidator $serviceValidator,
-        ServiceService $serviceService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $serviceValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $service = $serviceService->createOrUpdateService($data, $service);
-        $entityManager->flush();
-
-        return $this->json($service);
+    public function edit(Request $request, Service $service): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $updatedService = $this->serviceService->updateService($service, $requestData);
+        return $this->json($updatedService, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_service_delete', methods: ['DELETE'])]
-    public function delete(Service $service, EntityManagerInterface $entityManager): Response
+    public function delete(Service $service): JsonResponse
     {
-        $entityManager->remove($service);
-        $entityManager->flush();
-
+        $this->serviceService->deleteService($service);
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\RepairRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RepairRepository::class)]
 #[ORM\Table(name: "repairs")]
@@ -18,22 +19,31 @@ class Repair
 
     #[ORM\ManyToOne(targetEntity: Vehicle::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['repair_detail'])]
     private ?Vehicle $vehicle = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Assert\NotBlank]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['repair_detail'])]
     private ?\datetime $dateIn = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['repair_detail'])]
     private ?\datetime $dateOut = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    #[Assert\Choice(['Pending', 'In Progress', 'Completed', 'Cancelled', 'Завершено', 'В процесі', 'Скасовано'])]
     #[Groups(['repair_detail'])]
     private ?string $status = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     #[Groups(['repair_detail'])]
     private ?string $totalCost = null;
 

@@ -3,13 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Repair;
-use App\Entity\Vehicle;
-use App\Form\RepairType;
 use App\Repository\RepairRepository;
 use App\Service\RepairService;
-use App\Service\RepairValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -17,73 +14,41 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/repair')]
 class RepairController extends AbstractController
 {
+    public function __construct(private RepairService $repairService) {}
+
     #[Route('/', name: 'app_repair_index', methods: ['GET'])]
-    public function index(RepairRepository $repairRepository): Response
+    public function index(RepairRepository $repairRepository): JsonResponse
     {
         $repairs = $repairRepository->findAll();
-        return $this->json($repairs, 200, [], ['groups' => ['repair_detail', 'vehicle_list']]);
+        return $this->json($repairs, Response::HTTP_OK, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
-    #[Route('/create', name: 'app_repair_new', methods: ['POST'])]
-    public function new(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        RepairValidator $repairValidator,
-        RepairService $repairService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $repairValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicle_id']);
-        if (!$vehicle) {
-            return $this->json(['error' => 'Vehicle not found.'], Response::HTTP_NOT_FOUND);
-        }
-
-        $repair = $repairService->createOrUpdateRepair($data, $vehicle);
-        $entityManager->persist($repair);
-        $entityManager->flush();
-
+    #[Route('/create', name: 'app_repair_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $repair = $this->repairService->createRepair($requestData);
         return $this->json($repair, Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'app_repair_show', methods: ['GET'])]
-    public function show(Repair $repair): Response
+    public function show(Repair $repair): JsonResponse
     {
-        return $this->json($repair, 200, [], ['groups' => ['repair_detail', 'vehicle_list']]);
+        return $this->json($repair, Response::HTTP_OK, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
     #[Route('/{id}/edit', name: 'app_repair_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(
-        Request $request,
-        Repair $repair,
-        EntityManagerInterface $entityManager,
-        RepairValidator $repairValidator,
-        RepairService $repairService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $repairValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $vehicle = $repair->getVehicle();
-        $repair = $repairService->createOrUpdateRepair($data, $vehicle, $repair);
-        $entityManager->flush();
-
-        return $this->json($repair);
+    public function edit(Request $request, Repair $repair): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $updatedRepair = $this->repairService->updateRepair($repair, $requestData);
+        return $this->json($updatedRepair, Response::HTTP_OK);
     }
 
-    #[Route('/{id}', name: 'app_repair_delete', methods: ['DELETE'])]
-    public function delete(Repair $repair, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}/delete', name: 'app_repair_delete', methods: ['DELETE'])]
+    public function delete(Repair $repair): JsonResponse
     {
-        $entityManager->remove($repair);
-        $entityManager->flush();
-
+        $this->repairService->deleteRepair($repair);
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

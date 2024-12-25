@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\AppointmentRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AppointmentRepository::class)]
 #[ORM\Table(name: "appointments")]
@@ -18,19 +19,26 @@ class Appointment
 
     #[ORM\ManyToOne(targetEntity: Customer::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['appointment_detail'])]
     private ?Customer $customer = null;
 
     #[ORM\ManyToOne(targetEntity: Vehicle::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['appointment_detail'])]
     private ?Vehicle $vehicle = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Assert\NotBlank]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['appointment_detail'])]
     private ?\datetime $scheduledDate = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    #[Assert\Choice(['Scheduled', 'Completed', 'Cancelled', 'Rescheduled', 'Pending', 'In Progress'])]
     #[Groups(['appointment_detail'])]
     private ?string $status = null;
 

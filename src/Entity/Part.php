@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\PartRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PartRepository::class)]
 #[ORM\Table(name: "parts")]
@@ -17,22 +18,30 @@ class Part
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 100)]
     #[Groups(['part_detail'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
     #[Groups(['part_detail'])]
     private ?string $manufacturer = null;
 
     #[ORM\Column(length: 50, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['part_detail'])]
     private ?string $partNumber = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     #[Groups(['part_detail'])]
     private ?string $currentPrice = null;
 
     #[ORM\Column]
+    #[Assert\PositiveOrZero]
     #[Groups(['part_detail'])]
     private int $quantityInStock = 0;
 
