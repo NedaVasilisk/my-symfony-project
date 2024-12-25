@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: "users")]
@@ -12,15 +13,21 @@ class User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(length: 50, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['user_list', 'user_detail'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['user_detail'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 8)]
     #[Groups(['user_detail'])]
     private ?string $passwordHash = null;
 
@@ -29,10 +36,13 @@ class User
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['user_detail'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 100, unique: true, nullable: true)]
+    #[Assert\Email]
     #[Groups(['user_detail'])]
     private ?string $email = null;
 
@@ -42,10 +52,13 @@ class User
     private ?Role $role = null;
 
     #[ORM\Column(options: ['default' => true])]
+    #[Assert\Type('bool')]
     #[Groups(['user_detail'])]
     private bool $isActive = true;
 
     #[ORM\Column(type: 'datetime')]
+    #[Assert\NotBlank]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['user_detail'])]
     private ?\datetime $createdAt = null;
 

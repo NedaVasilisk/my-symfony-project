@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\RepairAssignmentRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RepairAssignmentRepository::class)]
 #[ORM\Table(name: "repair_assignments")]
@@ -18,11 +19,13 @@ class RepairAssignment
 
     #[ORM\ManyToOne(targetEntity: Repair::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['repair_assignment_detail'])]
     private ?Repair $repair = null;
 
     #[ORM\ManyToOne(targetEntity: Employee::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: "SET NULL")]
+    #[Assert\Type(Employee::class)]
     #[Groups(['repair_assignment_detail'])]
     private ?Employee $employee = null;
 

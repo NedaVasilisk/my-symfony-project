@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\VehicleRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
 #[ORM\Table(name: "vehicles")]
@@ -12,7 +13,9 @@ class Vehicle
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(length: 17, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 17, max: 17)]
     #[Groups(['vehicle_list', 'vehicle_detail', 'vehicle_max'])]
     private ?int $id = null;
 
@@ -26,30 +29,42 @@ class Vehicle
     private ?string $vin = null;
 
     #[ORM\Column(length: 10, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 10)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $licensePlate = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $make = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $model = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank]
+    #[Assert\Range(min: 1886, max: 2100)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?int $year = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $engineType = null;
 
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
+    #[Assert\PositiveOrZero]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?string $batteryCapacity = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['vehicle_detail', 'vehicle_max'])]
     private ?\datetime $lastIotUpdate = null;
 

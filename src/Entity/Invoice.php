@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\InvoiceRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: InvoiceRepository::class)]
 #[ORM\Table(name: "invoices")]
@@ -18,18 +19,24 @@ class Invoice
 
     #[ORM\ManyToOne(targetEntity: Repair::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull]
     #[Groups(['invoices_detail'])]
     private ?Repair $repair = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Assert\NotBlank]
+    #[Assert\Type(\DateTime::class)]
     #[Groups(['invoices_detail'])]
     private ?\Datetime $dateIssued = null;
 
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\Positive]
     #[Groups(['invoices_detail'])]
     private ?string $totalAmount = null;
 
     #[ORM\Column]
+    #[Assert\Type('bool')]
     #[Groups(['invoices_detail'])]
     private bool $isPaid = false;
 
