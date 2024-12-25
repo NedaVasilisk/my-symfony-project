@@ -2,107 +2,52 @@
 
 namespace App\Controller;
 
-use App\Entity\Part;
 use App\Entity\PriceHistoryPart;
-use App\Form\PriceHistoryPartType;
 use App\Repository\PriceHistoryPartRepository;
 use App\Service\PriceHistoryPartService;
-use App\Service\PriceHistoryPartValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/price-history-part')]
 class PriceHistoryPartController extends AbstractController
 {
+    public function __construct(private PriceHistoryPartService $priceHistoryPartService) {}
+
     #[Route('/', name: 'app_price_history_part_index', methods: ['GET'])]
-    public function index(PriceHistoryPartRepository $priceHistoryPartRepository): Response
+    public function index(PriceHistoryPartRepository $repository): JsonResponse
     {
-        $parts = $priceHistoryPartRepository->findAll();
-        return $this->json($parts, 200, [], ['groups' => ['price_history_part_list', 'part_detail']]);
+        $priceHistory = $repository->findAll();
+        return $this->json($priceHistory, JsonResponse::HTTP_OK);
     }
 
-    #[Route('/create', name: 'app_price_history_part_new', methods: ['POST'])]
-    public function new(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        PriceHistoryPartValidator $validator,
-        PriceHistoryPartService $service
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $validator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
-        if (!$part) {
-            return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
-        }
-
-        $priceHistoryPart = $service->createOrUpdatePriceHistoryPart($data, $part);
-        $entityManager->persist($priceHistoryPart);
-        $entityManager->flush();
-
-        return $this->json($priceHistoryPart, Response::HTTP_CREATED);
+    #[Route('/create', name: 'app_price_history_part_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $priceHistoryPart = $this->priceHistoryPartService->createPriceHistoryPart($requestData);
+        return $this->json($priceHistoryPart, JsonResponse::HTTP_CREATED);
     }
 
-    #[Route('/{part}', name: 'app_price_history_part_show', methods: ['GET'])]
-    public function show(PriceHistoryPart $priceHistoryPart): Response
+    #[Route('/{id}', name: 'app_price_history_part_show', methods: ['GET'])]
+    public function show(PriceHistoryPart $priceHistoryPart): JsonResponse
     {
-        return $this->json($priceHistoryPart);
-    }
-
-    #[Route('/part/{partId}', name: 'app_price_history_part_by_part', methods: ['GET'])]
-    public function findByPartId(int $partId, EntityManagerInterface $entityManager): Response
-    {
-        $priceHistoryParts = $entityManager->getRepository(PriceHistoryPart::class)->findBy(['part' => $partId]);
-
-        if (!$priceHistoryParts) {
-            return $this->json(['error' => 'No price history found for the given part_id'], Response::HTTP_NOT_FOUND);
-        }
-
-        return $this->json($priceHistoryParts);
+        return $this->json($priceHistoryPart, JsonResponse::HTTP_OK);
     }
 
     #[Route('/{id}/edit', name: 'app_price_history_part_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(
-        Request $request,
-        PriceHistoryPart $priceHistoryPart,
-        EntityManagerInterface $entityManager,
-        PriceHistoryPartValidator $validator,
-        PriceHistoryPartService $service
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $validator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        if (isset($data['part_id'])) {
-            $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
-            if (!$part) {
-                return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
-            }
-            $priceHistoryPart->setPart($part);
-        }
-
-        $priceHistoryPart = $service->createOrUpdatePriceHistoryPart($data, $priceHistoryPart->getPart(), $priceHistoryPart);
-        $entityManager->flush();
-
-        return $this->json($priceHistoryPart, Response::HTTP_OK);
+    public function edit(Request $request, PriceHistoryPart $priceHistoryPart): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $updatedPriceHistoryPart = $this->priceHistoryPartService->updatePriceHistoryPart($priceHistoryPart, $requestData);
+        return $this->json($updatedPriceHistoryPart, JsonResponse::HTTP_OK);
     }
 
-    #[Route('/{part}/delete', name: 'app_price_history_part_delete', methods: ['DELETE'])]
-    public function delete(PriceHistoryPart $priceHistoryPart, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}/delete', name: 'app_price_history_part_delete', methods: ['DELETE'])]
+    public function delete(PriceHistoryPart $priceHistoryPart): JsonResponse
     {
-        $entityManager->remove($priceHistoryPart);
-        $entityManager->flush();
-
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        $this->priceHistoryPartService->deletePriceHistoryPart($priceHistoryPart);
+        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
     }
 }

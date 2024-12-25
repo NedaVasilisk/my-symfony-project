@@ -3,12 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Role;
-use App\Form\RoleType;
 use App\Repository\RoleRepository;
 use App\Service\RoleService;
-use App\Service\RoleValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -16,67 +14,41 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/role')]
 class RoleController extends AbstractController
 {
+    public function __construct(private RoleService $roleService) {}
+
     #[Route('/', name: 'app_role_index', methods: ['GET'])]
-    public function index(RoleRepository $roleRepository): Response
+    public function index(RoleRepository $roleRepository): JsonResponse
     {
         $roles = $roleRepository->findAll();
-        return $this->json($roles);
+        return $this->json($roles, Response::HTTP_OK);
     }
 
-    #[Route('/create', name: 'app_role_new', methods: ['POST'])]
-    public function new(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        RoleValidator $roleValidator,
-        RoleService $roleService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $roleValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $role = $roleService->createOrUpdateRole($data);
-        $entityManager->persist($role);
-        $entityManager->flush();
-
+    #[Route('/create', name: 'app_role_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $role = $this->roleService->createRole($requestData);
         return $this->json($role, Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'app_role_show', methods: ['GET'])]
-    public function show(Role $role): Response
+    public function show(Role $role): JsonResponse
     {
-        return $this->json($role);
+        return $this->json($role, Response::HTTP_OK);
     }
 
     #[Route('/{id}/edit', name: 'app_role_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(
-        Request $request,
-        Role $role,
-        EntityManagerInterface $entityManager,
-        RoleValidator $roleValidator,
-        RoleService $roleService
-    ): Response {
-        $data = json_decode($request->getContent(), true);
-
-        $errors = $roleValidator->validate($data);
-        if (!empty($errors)) {
-            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
-        $role = $roleService->createOrUpdateRole($data, $role);
-        $entityManager->flush();
-
-        return $this->json($role);
+    public function edit(Request $request, Role $role): JsonResponse
+    {
+        $requestData = json_decode($request->getContent(), true);
+        $updatedRole = $this->roleService->updateRole($role, $requestData);
+        return $this->json($updatedRole, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_role_delete', methods: ['DELETE'])]
-    public function delete(Role $role, EntityManagerInterface $entityManager): Response
+    public function delete(Role $role): JsonResponse
     {
-        $entityManager->remove($role);
-        $entityManager->flush();
-
+        $this->roleService->deleteRole($role);
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }
