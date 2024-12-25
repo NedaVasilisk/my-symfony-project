@@ -7,6 +7,8 @@ use App\Entity\Repair;
 use App\Entity\RepairPart;
 use App\Form\RepairPartType;
 use App\Repository\RepairPartRepository;
+use App\Service\RepairPartService;
+use App\Service\RepairPartValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,30 +26,30 @@ class RepairPartController extends AbstractController
     }
 
     #[Route('/create', name: 'app_repair_part_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        RepairPartValidator $validator,
+        RepairPartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['repair_id']) || empty($data['part_id'])) {
-            return $this->json(['error' => 'repair_id and part_id are required'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         $repair = $entityManager->getRepository(Repair::class)->find($data['repair_id']);
         if (!$repair) {
-            return $this->json(['error' => 'Repair not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Repair not found.'], Response::HTTP_NOT_FOUND);
         }
 
         $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
         if (!$part) {
-            return $this->json(['error' => 'Part not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $repairPart = new RepairPart();
-        $repairPart->setRepair($repair);
-        $repairPart->setPart($part);
-        $repairPart->setQuantity($data['quantity'] ?? 1);
-        $repairPart->setPriceAtTime($data['priceAtTime'] ?? 0.0);
-
+        $repairPart = $service->createOrUpdateRepairPart($data, $repair, $part);
         $entityManager->persist($repairPart);
         $entityManager->flush();
 
@@ -61,40 +63,38 @@ class RepairPartController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_repair_part_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, RepairPart $repairPart, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        RepairPart $repairPart,
+        EntityManagerInterface $entityManager,
+        RepairPartValidator $validator,
+        RepairPartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
+
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        $repair = $repairPart->getRepair();
+        $part = $repairPart->getPart();
 
         if (isset($data['repair_id'])) {
             $repair = $entityManager->getRepository(Repair::class)->find($data['repair_id']);
             if (!$repair) {
-                return $this->json(['error' => 'Repair not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Repair not found.'], Response::HTTP_NOT_FOUND);
             }
-            $repairPart->setRepair($repair);
         }
 
         if (isset($data['part_id'])) {
             $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
             if (!$part) {
-                return $this->json(['error' => 'Part not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
             }
-            $repairPart->setPart($part);
         }
 
-        if (isset($data['quantity'])) {
-            if (!is_numeric($data['quantity']) || $data['quantity'] <= 0) {
-                return $this->json(['error' => 'Invalid quantity'], Response::HTTP_BAD_REQUEST);
-            }
-            $repairPart->setQuantity((int)$data['quantity']);
-        }
-
-        if (isset($data['priceAtTime'])) {
-            if (!is_numeric($data['priceAtTime']) || $data['priceAtTime'] < 0) {
-                return $this->json(['error' => 'Invalid priceAtTime'], Response::HTTP_BAD_REQUEST);
-            }
-            $repairPart->setPriceAtTime((float)$data['priceAtTime']);
-        }
-
+        $repairPart = $service->createOrUpdateRepairPart($data, $repair, $part, $repairPart);
         $entityManager->flush();
 
         return $this->json($repairPart);

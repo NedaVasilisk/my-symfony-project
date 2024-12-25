@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Customer;
+use App\Entity\User;
 use App\Form\CustomerType;
 use App\Repository\CustomerRepository;
 use App\Repository\UserRepository;
+use App\Service\CustomerService;
+use App\Service\CustomerValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,32 +29,28 @@ class CustomerController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        CustomerValidator $validator,
+        CustomerService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        $user = null;
-        if (!empty($data['userId'])) {
-            $user = $userRepository->find($data['userId']);
-            if (!$user) {
-                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-            }
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $customer = new Customer();
-        $customer
-            ->setUser($user)
-            ->setFirstName($data['firstName'] ?? '')
-            ->setLastName($data['lastName'] ?? '')
-            ->setPhone($data['phone'] ?? '')
-            ->setEmail($data['email'] ?? '')
-            ->setAddress($data['address'] ?? null);
+        $user = $validator->validateUser($data['userId'] ?? null, $entityManager);
+        if ($user === null) {
+            return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
+        }
 
+        $customer = $service->createOrUpdateCustomer($data, $user);
         $entityManager->persist($customer);
         $entityManager->flush();
 
         return $this->json($customer, Response::HTTP_CREATED);
     }
+
     #[Route('/{id}', name: 'app_customer_show', methods: ['GET'])]
     public function show(Customer $customer): Response
     {
@@ -63,36 +62,28 @@ class CustomerController extends AbstractController
         Request $request,
         Customer $customer,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        CustomerValidator $validator,
+        CustomerService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['userId'])) {
-            $user = $userRepository->find($data['userId']);
-            if (!$user) {
-                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['user_id'])) {
+            $user = $validator->validateUser($data['userId'], $entityManager);
+            if ($user === null) {
+                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
             }
             $customer->setUser($user);
         }
 
-        if (isset($data['firstName'])) {
-            $customer->setFirstName($data['firstName']);
-        }
-        if (isset($data['lastName'])) {
-            $customer->setLastName($data['lastName']);
-        }
-        if (isset($data['phone'])) {
-            $customer->setPhone($data['phone']);
-        }
-        if (isset($data['email'])) {
-            $customer->setEmail($data['email']);
-        }
-        if (isset($data['address'])) {
-            $customer->setAddress($data['address']);
-        }
-
+        $customer = $service->createOrUpdateCustomer($data, $customer->getUser(), $customer);
         $entityManager->flush();
-        return $this->json($customer);
+
+        return $this->json($customer, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_customer_delete', methods: ['DELETE'])]

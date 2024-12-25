@@ -6,6 +6,8 @@ use App\Entity\Part;
 use App\Entity\PriceHistoryPart;
 use App\Form\PriceHistoryPartType;
 use App\Repository\PriceHistoryPartRepository;
+use App\Service\PriceHistoryPartService;
+use App\Service\PriceHistoryPartValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,24 +25,25 @@ class PriceHistoryPartController extends AbstractController
     }
 
     #[Route('/create', name: 'app_price_history_part_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        PriceHistoryPartValidator $validator,
+        PriceHistoryPartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['part_id']) || !is_numeric($data['part_id'])) {
-            return $this->json(['error' => 'Invalid or missing part_id'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
         if (!$part) {
-            return $this->json(['error' => 'Part not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $priceHistoryPart = new PriceHistoryPart();
-        $priceHistoryPart->setPart($part);
-        $priceHistoryPart->setEffectiveDate(new \DateTime($data['effectiveDate'] ?? 'now'));
-        $priceHistoryPart->setPrice($data['price'] ?? 0.0);
-
+        $priceHistoryPart = $service->createOrUpdatePriceHistoryPart($data, $part);
         $entityManager->persist($priceHistoryPart);
         $entityManager->flush();
 
@@ -66,36 +69,32 @@ class PriceHistoryPartController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_price_history_part_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, PriceHistoryPart $priceHistoryPart, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        PriceHistoryPart $priceHistoryPart,
+        EntityManagerInterface $entityManager,
+        PriceHistoryPartValidator $validator,
+        PriceHistoryPartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['effectiveDate'])) {
-            try {
-                $priceHistoryPart->setEffectiveDate(new \DateTime($data['effectiveDate']));
-            } catch (\Exception $e) {
-                return $this->json(['error' => 'Invalid effectiveDate format'], Response::HTTP_BAD_REQUEST);
-            }
-        }
-
-        if (isset($data['price'])) {
-            if (!is_numeric($data['price'])) {
-                return $this->json(['error' => 'Invalid price'], Response::HTTP_BAD_REQUEST);
-            }
-            $priceHistoryPart->setPrice($data['price']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         if (isset($data['part_id'])) {
             $part = $entityManager->getRepository(Part::class)->find($data['part_id']);
             if (!$part) {
-                return $this->json(['error' => 'Part not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Part not found.'], Response::HTTP_NOT_FOUND);
             }
             $priceHistoryPart->setPart($part);
         }
 
+        $priceHistoryPart = $service->createOrUpdatePriceHistoryPart($data, $priceHistoryPart->getPart(), $priceHistoryPart);
         $entityManager->flush();
 
-        return $this->json($priceHistoryPart);
+        return $this->json($priceHistoryPart, Response::HTTP_OK);
     }
 
     #[Route('/{part}/delete', name: 'app_price_history_part_delete', methods: ['DELETE'])]

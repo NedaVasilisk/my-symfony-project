@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Notification;
+use App\Entity\User;
 use App\Form\NotificationType;
 use App\Repository\NotificationRepository;
 use App\Repository\UserRepository;
+use App\Service\NotificationService;
+use App\Service\NotificationValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,25 +29,22 @@ class NotificationController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        NotificationValidator $validator,
+        NotificationService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['userId'])) {
-            return $this->json(['error' => 'Missing userId'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-        $user = $userRepository->find($data['userId']);
+
+        $user = $entityManager->getRepository(User::class)->find($data['userId']);
         if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $notification = new Notification();
-        $notification
-            ->setUser($user)
-            ->setMessage($data['message'] ?? '')
-            ->setSentAt(new \DateTime($data['sentAt'] ?? 'now'))
-            ->setIsRead($data['isRead'] ?? false);
-
+        $notification = $service->createOrUpdateNotification($data, $user);
         $entityManager->persist($notification);
         $entityManager->flush();
 
@@ -56,35 +56,34 @@ class NotificationController extends AbstractController
     {
         return $this->json($notification, 200, [], ['groups' => ['notifications_detail', 'user_list']]);
     }
+
     #[Route('/{id}/edit', name: 'app_notification_edit', methods: ['PUT', 'PATCH'])]
     public function edit(
         Request $request,
         Notification $notification,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        NotificationValidator $validator,
+        NotificationService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['userId'])) {
-            $user = $userRepository->find($data['userId']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['user_id'])) {
+            $user = $entityManager->getRepository(User::class)->find($data['userId']);
             if (!$user) {
-                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
             }
             $notification->setUser($user);
         }
 
-        if (isset($data['message'])) {
-            $notification->setMessage($data['message']);
-        }
-        if (isset($data['sentAt'])) {
-            $notification->setSentAt(new \DateTime($data['sentAt']));
-        }
-        if (isset($data['isRead'])) {
-            $notification->setIsRead($data['isRead']);
-        }
-
+        $notification = $service->createOrUpdateNotification($data, $notification->getUser(), $notification);
         $entityManager->flush();
-        return $this->json($notification);
+
+        return $this->json($notification, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_notification_delete', methods: ['DELETE'])]

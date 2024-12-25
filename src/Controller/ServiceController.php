@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Service;
 use App\Form\ServiceType;
 use App\Repository\ServiceRepository;
+use App\Service\ServiceService;
+use App\Service\ServiceValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,15 +24,20 @@ class ServiceController extends AbstractController
     }
 
     #[Route('/create', name: 'app_service_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ServiceValidator $serviceValidator,
+        ServiceService $serviceService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        $service = new Service();
-        $service->setName($data['name'] ?? null);
-        $service->setDescription($data['description'] ?? null);
-        $service->setCurrentPrice($data['currentPrice'] ?? 0.0);
+        $errors = $serviceValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
 
+        $service = $serviceService->createOrUpdateService($data);
         $entityManager->persist($service);
         $entityManager->flush();
 
@@ -44,14 +51,21 @@ class ServiceController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_service_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Service $service, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Service $service,
+        EntityManagerInterface $entityManager,
+        ServiceValidator $serviceValidator,
+        ServiceService $serviceService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['name'])) $service->setName($data['name']);
-        if (isset($data['description'])) $service->setDescription($data['description']);
-        if (isset($data['currentPrice'])) $service->setCurrentPrice($data['currentPrice']);
+        $errors = $serviceValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
 
+        $service = $serviceService->createOrUpdateService($data, $service);
         $entityManager->flush();
 
         return $this->json($service);

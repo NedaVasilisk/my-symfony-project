@@ -6,6 +6,8 @@ use App\Entity\PriceHistoryService;
 use App\Entity\Service;
 use App\Form\PriceHistoryServiceType;
 use App\Repository\PriceHistoryServiceRepository;
+use App\Service\PriceHistoryServiceService;
+use App\Service\PriceHistoryServiceValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,24 +25,25 @@ class PriceHistoryServiceController extends AbstractController
     }
 
     #[Route('/create', name: 'app_price_history_service_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        PriceHistoryServiceValidator $validator,
+        PriceHistoryServiceService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['service_id']) || !is_numeric($data['service_id'])) {
-            return $this->json(['error' => 'Invalid or missing service ID'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $service = $entityManager->getRepository(Service::class)->find($data['service_id']);
-        if (!$service) {
-            return $this->json(['error' => 'Service not found'], Response::HTTP_NOT_FOUND);
+        $serviceEntity = $entityManager->getRepository(Service::class)->find($data['service_id']);
+        if (!$serviceEntity) {
+            return $this->json(['error' => 'Service not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $priceHistoryService = new PriceHistoryService();
-        $priceHistoryService->setService($service);
-        $priceHistoryService->setEffectiveDate(new \DateTime($data['effectiveDate'] ?? 'now'));
-        $priceHistoryService->setPrice($data['price'] ?? 0.0);
-
+        $priceHistoryService = $service->createOrUpdatePriceHistoryService($data, $serviceEntity);
         $entityManager->persist($priceHistoryService);
         $entityManager->flush();
 
@@ -67,41 +70,32 @@ class PriceHistoryServiceController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_price_history_service_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, PriceHistoryService $priceHistoryService, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        PriceHistoryService $priceHistoryService,
+        EntityManagerInterface $entityManager,
+        PriceHistoryServiceValidator $validator,
+        PriceHistoryServiceService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
         if (isset($data['service_id'])) {
-            if (!is_numeric($data['service_id'])) {
-                return $this->json(['error' => 'Invalid service ID'], Response::HTTP_BAD_REQUEST);
+            $serviceEntity = $entityManager->getRepository(Service::class)->find($data['service_id']);
+            if (!$serviceEntity) {
+                return $this->json(['error' => 'Service not found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $service = $entityManager->getRepository(Service::class)->find($data['service_id']);
-            if (!$service) {
-                return $this->json(['error' => 'Service not found'], Response::HTTP_NOT_FOUND);
-            }
-
-            $priceHistoryService->setService($service);
+            $priceHistoryService->setService($serviceEntity);
         }
 
-        if (isset($data['effectiveDate'])) {
-            try {
-                $priceHistoryService->setEffectiveDate(new \DateTime($data['effectiveDate']));
-            } catch (\Exception $e) {
-                return $this->json(['error' => 'Invalid date format for effectiveDate'], Response::HTTP_BAD_REQUEST);
-            }
-        }
-
-        if (isset($data['price'])) {
-            if (!is_numeric($data['price'])) {
-                return $this->json(['error' => 'Invalid price'], Response::HTTP_BAD_REQUEST);
-            }
-            $priceHistoryService->setPrice((float)$data['price']);
-        }
-
+        $priceHistoryService = $service->createOrUpdatePriceHistoryService($data, $priceHistoryService->getService(), $priceHistoryService);
         $entityManager->flush();
 
-        return $this->json($priceHistoryService);
+        return $this->json($priceHistoryService, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_price_history_service_delete', methods: ['DELETE'])]

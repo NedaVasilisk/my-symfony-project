@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Invoice;
+use App\Entity\Repair;
 use App\Form\InvoiceType;
 use App\Repository\InvoiceRepository;
 use App\Repository\RepairRepository;
+use App\Service\InvoiceService;
+use App\Service\InvoiceValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,25 +29,22 @@ class InvoiceController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        RepairRepository $repairRepository
+        InvoiceValidator $validator,
+        InvoiceService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['repairId'])) {
-            return $this->json(['error' => 'Missing repairId'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-        $repair = $repairRepository->find($data['repairId']);
+
+        $repair = $entityManager->getRepository(Repair::class)->find($data['repairId']);
         if (!$repair) {
-            return $this->json(['error' => 'Repair not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Repair not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $invoice = new Invoice();
-        $invoice
-            ->setRepair($repair)
-            ->setDateIssued(new \DateTime($data['dateIssued'] ?? 'now'))
-            ->setTotalAmount($data['totalAmount'] ?? 0.0)
-            ->setIsPaid($data['isPaid'] ?? false);
-
+        $invoice = $service->createOrUpdateInvoice($data, $repair);
         $entityManager->persist($invoice);
         $entityManager->flush();
 
@@ -62,30 +62,28 @@ class InvoiceController extends AbstractController
         Request $request,
         Invoice $invoice,
         EntityManagerInterface $entityManager,
-        RepairRepository $repairRepository
+        InvoiceValidator $validator,
+        InvoiceService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['repairId'])) {
-            $repair = $repairRepository->find($data['repairId']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['repair_id'])) {
+            $repair = $entityManager->getRepository(Repair::class)->find($data['repairId']);
             if (!$repair) {
-                return $this->json(['error' => 'Repair not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Repair not found.'], Response::HTTP_NOT_FOUND);
             }
             $invoice->setRepair($repair);
         }
 
-        if (isset($data['dateIssued'])) {
-            $invoice->setDateIssued(new \DateTime($data['dateIssued']));
-        }
-        if (isset($data['totalAmount'])) {
-            $invoice->setTotalAmount($data['totalAmount']);
-        }
-        if (isset($data['isPaid'])) {
-            $invoice->setIsPaid($data['isPaid']);
-        }
-
+        $invoice = $service->createOrUpdateInvoice($data, $invoice->getRepair(), $invoice);
         $entityManager->flush();
-        return $this->json($invoice);
+
+        return $this->json($invoice, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_invoice_delete', methods: ['DELETE'])]

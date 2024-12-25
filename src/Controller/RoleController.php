@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Role;
 use App\Form\RoleType;
 use App\Repository\RoleRepository;
+use App\Service\RoleService;
+use App\Service\RoleValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,14 +24,20 @@ class RoleController extends AbstractController
     }
 
     #[Route('/create', name: 'app_role_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        RoleValidator $roleValidator,
+        RoleService $roleService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        $role = new Role();
-        $role->setRoleName($data['roleName'] ?? null);
-        $role->setDescription($data['description'] ?? null);
+        $errors = $roleValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
 
+        $role = $roleService->createOrUpdateRole($data);
         $entityManager->persist($role);
         $entityManager->flush();
 
@@ -43,13 +51,21 @@ class RoleController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_role_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Role $role, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Role $role,
+        EntityManagerInterface $entityManager,
+        RoleValidator $roleValidator,
+        RoleService $roleService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['roleName'])) $role->setRoleName($data['roleName']);
-        if (isset($data['description'])) $role->setDescription($data['description']);
+        $errors = $roleValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
 
+        $role = $roleService->createOrUpdateRole($data, $role);
         $entityManager->flush();
 
         return $this->json($role);

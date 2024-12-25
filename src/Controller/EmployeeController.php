@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Employee;
+use App\Entity\User;
 use App\Form\EmployeeType;
 use App\Repository\EmployeeRepository;
 use App\Repository\UserRepository;
+use App\Service\EmployeeService;
+use App\Service\EmployeeValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,28 +29,22 @@ class EmployeeController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        EmployeeValidator $validator,
+        EmployeeService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['userId'])) {
-            return $this->json(['error' => 'Missing userId'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-        $user = $userRepository->find($data['userId']);
+
+        $user = $entityManager->getRepository(User::class)->find($data['userId']);
         if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $employee = new Employee();
-        $employee
-            ->setUser($user)
-            ->setFirstName($data['firstName'] ?? '')
-            ->setLastName($data['lastName'] ?? '')
-            ->setPosition($data['position'] ?? '')
-            ->setPhone($data['phone'] ?? null)
-            ->setEmail($data['email'] ?? null)
-            ->setSpecialization($data['specialization'] ?? null);
-
+        $employee = $service->createOrUpdateEmployee($data, $user);
         $entityManager->persist($employee);
         $entityManager->flush();
 
@@ -65,39 +62,28 @@ class EmployeeController extends AbstractController
         Request $request,
         Employee $employee,
         EntityManagerInterface $entityManager,
-        UserRepository $userRepository
+        EmployeeValidator $validator,
+        EmployeeService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['userId'])) {
-            $user = $userRepository->find($data['userId']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['user_id'])) {
+            $user = $entityManager->getRepository(User::class)->find($data['userId']);
             if (!$user) {
-                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
             }
             $employee->setUser($user);
         }
 
-        if (isset($data['firstName'])) {
-            $employee->setFirstName($data['firstName']);
-        }
-        if (isset($data['lastName'])) {
-            $employee->setLastName($data['lastName']);
-        }
-        if (isset($data['position'])) {
-            $employee->setPosition($data['position']);
-        }
-        if (isset($data['phone'])) {
-            $employee->setPhone($data['phone']);
-        }
-        if (isset($data['email'])) {
-            $employee->setEmail($data['email']);
-        }
-        if (isset($data['specialization'])) {
-            $employee->setSpecialization($data['specialization']);
-        }
-
+        $employee = $service->createOrUpdateEmployee($data, $employee->getUser(), $employee);
         $entityManager->flush();
-        return $this->json($employee);
+
+        return $this->json($employee, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_employee_delete', methods: ['DELETE'])]

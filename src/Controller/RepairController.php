@@ -6,6 +6,8 @@ use App\Entity\Repair;
 use App\Entity\Vehicle;
 use App\Form\RepairType;
 use App\Repository\RepairRepository;
+use App\Service\RepairService;
+use App\Service\RepairValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,26 +25,25 @@ class RepairController extends AbstractController
     }
 
     #[Route('/create', name: 'app_repair_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        RepairValidator $repairValidator,
+        RepairService $repairService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['vehicle_id'])) {
-            return $this->json(['error' => 'Vehicle ID is required'], Response::HTTP_BAD_REQUEST);
+        $errors = $repairValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicle_id']);
         if (!$vehicle) {
-            return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vehicle not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $repair = new Repair();
-        $repair->setVehicle($vehicle);
-        $repair->setDateIn(new \DateTime($data['dateIn'] ?? 'now'));
-        $repair->setDateOut(isset($data['dateOut']) ? new \DateTime($data['dateOut']) : null);
-        $repair->setStatus($data['status'] ?? 'Pending');
-        $repair->setTotalCost($data['totalCost'] ?? 0.0);
-
+        $repair = $repairService->createOrUpdateRepair($data, $vehicle);
         $entityManager->persist($repair);
         $entityManager->flush();
 
@@ -56,23 +57,22 @@ class RepairController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_repair_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Repair $repair, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Repair $repair,
+        EntityManagerInterface $entityManager,
+        RepairValidator $repairValidator,
+        RepairService $repairService
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['vehicle_id'])) {
-            $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicle_id']);
-            if (!$vehicle) {
-                return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
-            }
-            $repair->setVehicle($vehicle);
+        $errors = $repairValidator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        if (isset($data['dateIn'])) $repair->setDateIn(new \DateTime($data['dateIn']));
-        if (isset($data['dateOut'])) $repair->setDateOut(new \DateTime($data['dateOut']));
-        if (isset($data['status'])) $repair->setStatus($data['status']);
-        if (isset($data['totalCost'])) $repair->setTotalCost($data['totalCost']);
-
+        $vehicle = $repair->getVehicle();
+        $repair = $repairService->createOrUpdateRepair($data, $vehicle, $repair);
         $entityManager->flush();
 
         return $this->json($repair);

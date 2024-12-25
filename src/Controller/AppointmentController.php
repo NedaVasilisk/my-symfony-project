@@ -3,10 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\Appointment;
+use App\Entity\Customer;
+use App\Entity\Vehicle;
 use App\Form\AppointmentType;
 use App\Repository\AppointmentRepository;
 use App\Repository\CustomerRepository;
 use App\Repository\VehicleRepository;
+use App\Service\AppointmentService;
+use App\Service\AppointmentValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,34 +31,27 @@ class AppointmentController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        CustomerRepository $customerRepository,
-        VehicleRepository $vehicleRepository
+        AppointmentValidator $validator,
+        AppointmentService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['customerId'])) {
-            return $this->json(['error' => 'Missing customerId'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-        $customer = $customerRepository->find($data['customerId']);
+
+        $customer = $entityManager->getRepository(Customer::class)->find($data['customerId']);
         if (!$customer) {
-            return $this->json(['error' => 'Customer not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Customer not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        if (empty($data['vehicleId'])) {
-            return $this->json(['error' => 'Missing vehicleId'], Response::HTTP_BAD_REQUEST);
-        }
-        $vehicle = $vehicleRepository->find($data['vehicleId']);
+        $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicleId']);
         if (!$vehicle) {
-            return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vehicle not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $appointment = new Appointment();
-        $appointment
-            ->setCustomer($customer)
-            ->setVehicle($vehicle)
-            ->setScheduledDate(new \DateTime($data['scheduledDate'] ?? 'now'))
-            ->setStatus($data['status'] ?? 'Pending');
-
+        $appointment = $service->createOrUpdateAppointment($data, $customer, $vehicle);
         $entityManager->persist($appointment);
         $entityManager->flush();
 
@@ -72,36 +69,36 @@ class AppointmentController extends AbstractController
         Request $request,
         Appointment $appointment,
         EntityManagerInterface $entityManager,
-        CustomerRepository $customerRepository,
-        VehicleRepository $vehicleRepository
+        AppointmentValidator $validator,
+        AppointmentService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['customerId'])) {
-            $customer = $customerRepository->find($data['customerId']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['customer_id'])) {
+            $customer = $entityManager->getRepository(Customer::class)->find($data['customerId']);
             if (!$customer) {
-                return $this->json(['error' => 'Customer not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Customer not found.'], Response::HTTP_NOT_FOUND);
             }
             $appointment->setCustomer($customer);
         }
 
-        if (isset($data['vehicleId'])) {
-            $vehicle = $vehicleRepository->find($data['vehicleId']);
+        if (isset($data['vehicle_id'])) {
+            $vehicle = $entityManager->getRepository(Vehicle::class)->find($data['vehicleId']);
             if (!$vehicle) {
-                return $this->json(['error' => 'Vehicle not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Vehicle not found.'], Response::HTTP_NOT_FOUND);
             }
             $appointment->setVehicle($vehicle);
         }
 
-        if (isset($data['scheduledDate'])) {
-            $appointment->setScheduledDate(new \DateTime($data['scheduledDate']));
-        }
-        if (isset($data['status'])) {
-            $appointment->setStatus($data['status']);
-        }
-
+        $appointment = $service->createOrUpdateAppointment($data, $appointment->getCustomer(), $appointment->getVehicle(), $appointment);
         $entityManager->flush();
-        return $this->json($appointment);
+
+        return $this->json($appointment, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_appointment_delete', methods: ['DELETE'])]

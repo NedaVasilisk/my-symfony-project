@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Part;
 use App\Form\PartType;
 use App\Repository\PartRepository;
+use App\Service\PartService;
+use App\Service\PartValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,22 +24,20 @@ class PartController extends AbstractController
     }
 
     #[Route('/create', name: 'app_part_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        PartValidator $validator,
+        PartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['partNumber'])) {
-            return $this->json(['error' => 'partNumber is required'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $part = new Part();
-        $part
-            ->setName($data['name'] ?? null)
-            ->setManufacturer($data['manufacturer'] ?? null)
-            ->setPartNumber($data['partNumber'])
-            ->setCurrentPrice($data['currentPrice'] ?? 0)
-            ->setQuantityInStock($data['quantityInStock'] ?? 0);
-
+        $part = $service->createOrUpdatePart($data);
         $entityManager->persist($part);
         $entityManager->flush();
 
@@ -51,27 +51,23 @@ class PartController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_part_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Part $part, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Part $part,
+        EntityManagerInterface $entityManager,
+        PartValidator $validator,
+        PartService $service
+    ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['name'])) {
-            $part->setName($data['name']);
-        }
-        if (isset($data['manufacturer'])) {
-            $part->setManufacturer($data['manufacturer']);
-        }
-        if (isset($data['partNumber'])) {
-            $part->setPartNumber($data['partNumber']);
-        }
-        if (isset($data['currentPrice'])) {
-            $part->setCurrentPrice($data['currentPrice']);
-        }
-        if (isset($data['quantityInStock'])) {
-            $part->setQuantityInStock($data['quantityInStock']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
+        $part = $service->createOrUpdatePart($data, $part);
         $entityManager->flush();
+
         return $this->json($part);
     }
 

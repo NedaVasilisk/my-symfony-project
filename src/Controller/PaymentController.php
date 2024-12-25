@@ -2,10 +2,13 @@
 
 namespace App\Controller;
 
+use App\Entity\Invoice;
 use App\Entity\Payment;
 use App\Form\PaymentType;
 use App\Repository\InvoiceRepository;
 use App\Repository\PaymentRepository;
+use App\Service\PaymentService;
+use App\Service\PaymentValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,26 +29,22 @@ class PaymentController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        InvoiceRepository $invoiceRepository
+        PaymentValidator $validator,
+        PaymentService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        // Знайти пов’язаний Invoice (якщо вимагається)
-        if (empty($data['invoiceId'])) {
-            return $this->json(['error' => 'Missing invoiceId'], Response::HTTP_BAD_REQUEST);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-        $invoice = $invoiceRepository->find($data['invoiceId']);
+
+        $invoice = $entityManager->getRepository(Invoice::class)->find($data['invoiceId']);
         if (!$invoice) {
-            return $this->json(['error' => 'Invoice not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Invoice not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $payment = new Payment();
-        $payment
-            ->setInvoice($invoice)
-            ->setPaymentDate(new \DateTime($data['paymentDate'] ?? 'now'))
-            ->setAmount($data['amount'] ?? 0.0)
-            ->setPaymentMethod($data['paymentMethod'] ?? 'Unknown');
-
+        $payment = $service->createOrUpdatePayment($data, $invoice);
         $entityManager->persist($payment);
         $entityManager->flush();
 
@@ -63,30 +62,28 @@ class PaymentController extends AbstractController
         Request $request,
         Payment $payment,
         EntityManagerInterface $entityManager,
-        InvoiceRepository $invoiceRepository
+        PaymentValidator $validator,
+        PaymentService $service
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['invoiceId'])) {
-            $invoice = $invoiceRepository->find($data['invoiceId']);
+        $errors = $validator->validate($data);
+        if (!empty($errors)) {
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['invoice_id'])) {
+            $invoice = $entityManager->getRepository(Invoice::class)->find($data['invoiceId']);
             if (!$invoice) {
-                return $this->json(['error' => 'Invoice not found'], Response::HTTP_NOT_FOUND);
+                return $this->json(['error' => 'Invoice not found.'], Response::HTTP_NOT_FOUND);
             }
             $payment->setInvoice($invoice);
         }
 
-        if (isset($data['paymentDate'])) {
-            $payment->setPaymentDate(new \DateTime($data['paymentDate']));
-        }
-        if (isset($data['amount'])) {
-            $payment->setAmount($data['amount']);
-        }
-        if (isset($data['paymentMethod'])) {
-            $payment->setPaymentMethod($data['paymentMethod']);
-        }
-
+        $payment = $service->createOrUpdatePayment($data, $payment->getInvoice(), $payment);
         $entityManager->flush();
-        return $this->json($payment);
+
+        return $this->json($payment, Response::HTTP_OK);
     }
 
     #[Route('/{id}/delete', name: 'app_payment_delete', methods: ['DELETE'])]
