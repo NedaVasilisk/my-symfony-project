@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/service')]
+#[Route('api/service')]
 class ServiceController extends AbstractController
 {
     public function __construct(private ServiceService $serviceService) {}

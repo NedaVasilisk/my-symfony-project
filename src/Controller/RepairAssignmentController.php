@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/repair-assignment')]
+#[Route('api/repair-assignment')]
 class RepairAssignmentController extends AbstractController
 {
     public function __construct(private RepairAssignmentService $repairAssignmentService) {}
