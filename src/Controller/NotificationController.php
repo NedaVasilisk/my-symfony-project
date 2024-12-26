@@ -23,6 +23,23 @@ class NotificationController extends AbstractController
         return $this->json($notifications, Response::HTTP_OK, [], ['groups' => ['notifications_detail', 'user_list']]);
     }
 
+    #[Route('/collection', name: 'app_notification_collection', methods: ['GET'])]
+    public function getCollection(Request $request, NotificationRepository $notificationRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $notificationsData = $notificationRepository->getAllNotificationsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $notificationsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['notifications_detail', 'user_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_notification_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

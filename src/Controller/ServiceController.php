@@ -23,6 +23,18 @@ class ServiceController extends AbstractController
         return $this->json($services, Response::HTTP_OK);
     }
 
+    #[Route('/collection', name: 'app_service_collection', methods: ['GET'])]
+    public function getCollection(Request $request, ServiceRepository $serviceRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $servicesData = $serviceRepository->getAllServicesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json($servicesData, JsonResponse::HTTP_OK, [], ['groups' => ['service_detail']]);
+    }
+
     #[Route('/create', name: 'app_service_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

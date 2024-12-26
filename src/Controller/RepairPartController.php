@@ -23,6 +23,23 @@ class RepairPartController extends AbstractController
         return $this->json($repairParts, JsonResponse::HTTP_OK, [], ['groups' => ['repair_part_detail', 'repair_list', 'part_list']]);
     }
 
+    #[Route('/collection', name: 'app_repair_part_collection', methods: ['GET'])]
+    public function getCollection(Request $request, RepairPartRepository $repairPartRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $repairPartsData = $repairPartRepository->getAllRepairPartsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $repairPartsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['repair_part_detail', 'part_list', 'repair_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_repair_part_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

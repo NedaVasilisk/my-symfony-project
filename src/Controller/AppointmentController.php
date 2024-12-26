@@ -23,6 +23,23 @@ class AppointmentController extends AbstractController
         return $this->json($appointments, Response::HTTP_OK, [], ['groups' => ['appointment_detail', 'customer_list', 'vehicle_list']]);
     }
 
+    #[Route('/collection', name: 'app_appointment_collection', methods: ['GET'])]
+    public function getCollection(Request $request, AppointmentRepository $appointmentRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $appointmentsData = $appointmentRepository->getAllAppointmentsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $appointmentsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['appointment_detail', 'customer_list', 'vehicle_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_appointment_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

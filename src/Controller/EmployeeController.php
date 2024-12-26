@@ -23,6 +23,23 @@ class EmployeeController extends AbstractController
         return $this->json($employees, Response::HTTP_OK, [], ['groups' => ['employee_detail', 'user_list']]);
     }
 
+    #[Route('/collection', name: 'app_employee_collection', methods: ['GET'])]
+    public function getCollection(Request $request, EmployeeRepository $employeeRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $employeesData = $employeeRepository->getAllEmployeesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $employeesData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['employee_detail', 'user_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_employee_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

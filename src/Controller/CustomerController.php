@@ -22,6 +22,23 @@ class CustomerController extends AbstractController
         return $this->json($customers, JsonResponse::HTTP_OK);
     }
 
+    #[Route('/collection', name: 'app_customer_collection', methods: ['GET'])]
+    public function getCollection(Request $request, CustomerRepository $customerRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $customersData = $customerRepository->getAllCustomersByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $customersData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['customer_detail', 'user_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_customer_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

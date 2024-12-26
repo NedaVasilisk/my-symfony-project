@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\RepairAssignment;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 
 /**
  * @extends ServiceEntityRepository<RepairAssignment>
@@ -21,28 +22,59 @@ class RepairAssignmentRepository extends ServiceEntityRepository
         parent::__construct($registry, RepairAssignment::class);
     }
 
-//    /**
-//     * @return RepairAssignment[] Returns an array of RepairAssignment objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('r')
-//            ->andWhere('r.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('r.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function getAllRepairAssignmentsByFilter(array $data, int $itemsPerPage, int $page): array
+    {
+        $queryBuilder = $this->createQueryBuilder('ra')
+            ->leftJoin('ra.repair', 'r')
+            ->addSelect('r')
+            ->leftJoin('ra.employee', 'e')
+            ->addSelect('e');
 
-//    public function findOneBySomeField($value): ?RepairAssignment
-//    {
-//        return $this->createQueryBuilder('r')
-//            ->andWhere('r.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        if (isset($data['id'])) {
+            $queryBuilder->andWhere('ra.id = :id')
+                ->setParameter('id', $data['id']);
+        }
+
+        if (isset($data['repair'])) {
+            $queryBuilder->andWhere('r.id = :repair')
+                ->setParameter('repair', $data['repair']);
+        }
+
+        if (isset($data['employee'])) {
+            $queryBuilder->andWhere('e.id = :employee')
+                ->setParameter('employee', $data['employee']);
+        }
+
+        if (isset($data['sort'])) {
+            $sortParams = explode(',', $data['sort']);
+            if (count($sortParams) === 2) {
+                [$sortField, $sortOrder] = $sortParams;
+                $allowedSortFields = ['id', 'repair', 'employee'];
+                $allowedSortOrder = ['asc', 'desc'];
+
+                if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {
+                    $queryBuilder->orderBy('ra.' . $sortField, strtoupper($sortOrder));
+                }
+            }
+        } else {
+            $queryBuilder->orderBy('ra.id', 'ASC');
+        }
+
+        $paginator = new Paginator($queryBuilder);
+        $totalItems = count($paginator);
+        $pagesCount = ceil($totalItems / $itemsPerPage);
+
+        $queryBuilder->setFirstResult($itemsPerPage * ($page - 1))
+            ->setMaxResults($itemsPerPage);
+
+        return [
+            'data' => $paginator->getQuery()->getResult(),
+            'pagination' => [
+                'currentPage' => $page,
+                'itemsPerPage' => $itemsPerPage,
+                'totalPages' => $pagesCount,
+                'totalItems' => $totalItems
+            ]
+        ];
+    }
 }

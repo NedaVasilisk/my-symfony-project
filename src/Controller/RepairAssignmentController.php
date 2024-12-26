@@ -22,6 +22,23 @@ class RepairAssignmentController extends AbstractController
         return $this->json($repairAssignments, JsonResponse::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
     }
 
+    #[Route('/collection', name: 'app_repair_assignment_collection', methods: ['GET'])]
+    public function getCollection(Request $request, RepairAssignmentRepository $repairAssignmentRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $repairAssignmentsData = $repairAssignmentRepository->getAllRepairAssignmentsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $repairAssignmentsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_repair_assignment_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

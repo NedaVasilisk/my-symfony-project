@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -21,28 +22,101 @@ class UserRepository extends ServiceEntityRepository
         parent::__construct($registry, User::class);
     }
 
-//    /**
-//     * @return User[] Returns an array of User objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('u.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * Отримує список User з фільтрацією та пагінацією.
+     *
+     * @param array $data Фільтри
+     * @param int $itemsPerPage Кількість елементів на сторінку
+     * @param int $page Номер сторінки
+     * @return array
+     */
+    public function getAllUsersByFilter(array $data, int $itemsPerPage, int $page): array
+    {
+        $queryBuilder = $this->createQueryBuilder('u');
 
-//    public function findOneBySomeField($value): ?User
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        if (isset($data['id'])) {
+            $queryBuilder->andWhere('u.id = :id')
+                ->setParameter('id', $data['id']);
+        }
+
+        if (isset($data['username'])) {
+            $queryBuilder->andWhere('u.username LIKE :username')
+                ->setParameter('username', '%' . $data['username'] . '%');
+        }
+
+        if (isset($data['firstName'])) {
+            $queryBuilder->andWhere('u.firstName LIKE :firstName')
+                ->setParameter('firstName', '%' . $data['firstName'] . '%');
+        }
+
+        if (isset($data['lastName'])) {
+            $queryBuilder->andWhere('u.lastName LIKE :lastName')
+                ->setParameter('lastName', '%' . $data['lastName'] . '%');
+        }
+
+        if (isset($data['email'])) {
+            $queryBuilder->andWhere('u.email LIKE :email')
+                ->setParameter('email', '%' . $data['email'] . '%');
+        }
+
+        if (isset($data['role'])) {
+            $queryBuilder->andWhere('u.role = :role')
+                ->setParameter('role', $data['role']);
+        }
+
+        if (isset($data['isActive'])) {
+            $queryBuilder->andWhere('u.isActive = :isActive')
+                ->setParameter('isActive', filter_var($data['isActive'], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if (isset($data['createdAt'])) {
+            if (is_array($data['createdAt'])) {
+                if (isset($data['createdAt']['from'])) {
+                    $queryBuilder->andWhere('u.createdAt >= :createdAtFrom')
+                        ->setParameter('createdAtFrom', new \DateTime($data['createdAt']['from']));
+                }
+                if (isset($data['createdAt']['to'])) {
+                    $queryBuilder->andWhere('u.createdAt <= :createdAtTo')
+                        ->setParameter('createdAtTo', new \DateTime($data['createdAt']['to']));
+                }
+            } else {
+                $queryBuilder->andWhere('u.createdAt = :createdAt')
+                    ->setParameter('createdAt', new \DateTime($data['createdAt']));
+            }
+        }
+
+        if (isset($data['sort'])) {
+            $sortParams = explode(',', $data['sort']);
+            if (count($sortParams) === 2) {
+                [$sortField, $sortOrder] = $sortParams;
+                $allowedSortFields = ['id', 'username', 'firstName', 'lastName', 'email', 'createdAt'];
+                $allowedSortOrder = ['asc', 'desc'];
+
+                if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {
+                    $queryBuilder->orderBy('u.' . $sortField, strtoupper($sortOrder));
+                }
+            }
+        } else {
+            // За замовчуванням сортування за ID
+            $queryBuilder->orderBy('u.id', 'ASC');
+        }
+
+        // Пагінація
+        $paginator = new Paginator($queryBuilder);
+        $totalItems = count($paginator);
+        $pagesCount = ceil($totalItems / $itemsPerPage);
+
+        $queryBuilder->setFirstResult($itemsPerPage * ($page - 1))
+            ->setMaxResults($itemsPerPage);
+
+        return [
+            'data' => $paginator->getQuery()->getResult(),
+            'pagination' => [
+                'currentPage' => $page,
+                'itemsPerPage' => $itemsPerPage,
+                'totalPages' => $pagesCount,
+                'totalItems' => $totalItems
+            ]
+        ];
+    }
 }

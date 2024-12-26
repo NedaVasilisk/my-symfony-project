@@ -29,6 +29,18 @@ class VehicleController extends AbstractController
         return $this->json($vehicles, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
     }
 
+    #[Route('/collection', name: 'app_vehicle_collection', methods: ['GET'])]
+    public function getCollection(Request $request, VehicleRepository $vehicleRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? (int)$requestData['itemsPerPage'] : 10;
+        $page = isset($requestData['page']) ? (int)$requestData['page'] : 1;
+
+        $vehiclesData = $vehicleRepository->getAllVehiclesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json($vehiclesData, Response::HTTP_CREATED, [], ['groups' => ['vehicle_detail', 'customer_list']]);
+    }
+
     #[Route('/create', name: 'app_vehicle_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
@@ -57,4 +69,5 @@ class VehicleController extends AbstractController
         $this->vehicleService->deleteVehicle($vehicle);
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
+
 }

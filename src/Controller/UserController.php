@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\UserRepository;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,18 @@ class UserController extends AbstractController
     {
         $users = $this->userService->getAllUsers();
         return $this->json($users, Response::HTTP_OK);
+    }
+
+    #[Route('/collection', name: 'app_user_collection', methods: ['GET'])]
+    public function getCollection(Request $request, UserRepository $userRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $usersData = $userRepository->getAllUsersByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json($usersData, JsonResponse::HTTP_OK, [], ['groups' => ['user_detail', 'role_list']]);
     }
 
     #[Route('/create', name: 'app_user_create', methods: ['POST'])]
