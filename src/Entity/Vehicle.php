@@ -15,10 +15,10 @@ use ApiPlatform\Metadata\Delete;
 
 #[ApiResource(
     operations: [
-        new GetCollection( normalizationContext: ['groups' => ['vehicle:read:collection']] ),
-        new Post( normalizationContext: ['groups' => ['vehicle:read:item']], denormalizationContext: ['groups' => ['vehicle:write']]),
-        new Get( normalizationContext: ['groups' => ['vehicle:read:item']] ),
-        new Patch( normalizationContext: ['groups' => ['vehicle:read:item']], denormalizationContext: ['groups' => ['vehicle:write']]),
+        new GetCollection(normalizationContext: ['groups' => ['vehicle:read:collection']]),
+        new Get(normalizationContext: ['groups' => ['vehicle:read:item']]),
+        new Post(denormalizationContext: ['groups' => ['vehicle:write']]),
+        new Patch(denormalizationContext: ['groups' => ['vehicle:write']]),
         new Delete()
     ]
 )]
@@ -28,59 +28,58 @@ class Vehicle
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(length: 17, unique: true)]
+    #[ORM\Column(unique: true)]
     #[Assert\NotBlank]
-    #[Assert\Length(min: 17, max: 17)]
-    #[Groups(['vehicle_list', 'vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Customer::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?Customer $customer = null;
 
     #[ORM\Column(length: 17, unique: true)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $vin = null;
 
     #[ORM\Column(length: 10, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 10)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $licensePlate = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $make = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $model = null;
 
     #[ORM\Column]
     #[Assert\NotBlank]
     #[Assert\Range(min: 1886, max: 2100)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?int $year = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $engineType = null;
 
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
     #[Assert\PositiveOrZero]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?string $batteryCapacity = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     #[Assert\Type(\DateTime::class)]
-    #[Groups(['vehicle_detail', 'vehicle_max', 'vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
+    #[Groups(['vehicle:read:collection', 'vehicle:read:item', 'vehicle:write'])]
     private ?\datetime $lastIotUpdate = null;
 
     public function getId(): ?int

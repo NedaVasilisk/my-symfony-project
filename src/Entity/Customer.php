@@ -14,44 +14,44 @@ class Customer
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['customer_list', 'customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?int $id = null;
 
     #[ORM\OneToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(unique: true, nullable: true, onDelete: "SET NULL")]
     #[Assert\Type(User::class)]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?User $user = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 20)]
     #[Assert\Regex(pattern: '/^\+?[0-9]{7,20}$/', message: 'Invalid phone number')]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Assert\Email]
     #[Assert\Length(max: 100)]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
-    #[Groups(['customer_detail', 'customer_max'])]
+    #[Groups(['vehicle:read:item', 'vehicle:read:collection', 'vehicle:write'])]
     private ?string $address = null;
 
     public function getId(): ?int

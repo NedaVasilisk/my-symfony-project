@@ -14,25 +14,23 @@ class VehicleService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private RequestCheckerService $requestCheckerService,
         private CustomerRepository $customerRepository
     ) {}
 
-    public function createVehicle(array $data): Vehicle
+    public function createVehicle(Vehicle $vehicle): Vehicle
     {
-        $this->requestCheckerService->check($data, ['customer_id', 'vin', 'licensePlate', 'make', 'model', 'year']);
-        $customer = $this->findCustomer($data['customer_id']);
-        $vehicle = $this->createOrUpdateVehicle(new Vehicle(), $data, $customer);
+        $this->validateCustomer($vehicle);
         $this->entityManager->persist($vehicle);
         $this->entityManager->flush();
+
         return $vehicle;
     }
 
-    public function updateVehicle(Vehicle $vehicle, array $data): Vehicle
+    public function updateVehicle(Vehicle $vehicle): Vehicle
     {
-        $customer = isset($data['customer_id']) ? $this->findCustomer($data['customer_id']) : $vehicle->getCustomer();
-        $this->createOrUpdateVehicle($vehicle, $data, $customer);
+        $this->validateCustomer($vehicle);
         $this->entityManager->flush();
+
         return $vehicle;
     }
 
@@ -42,27 +40,12 @@ class VehicleService
         $this->entityManager->flush();
     }
 
-    private function createOrUpdateVehicle(Vehicle $vehicle, array $data, Customer $customer): Vehicle
+    private function validateCustomer(Vehicle $vehicle): void
     {
-        $vehicle->setCustomer($customer);
-        $vehicle->setVin($data['vin'] ?? $vehicle->getVin());
-        $vehicle->setLicensePlate($data['licensePlate'] ?? $vehicle->getLicensePlate());
-        $vehicle->setMake($data['make'] ?? $vehicle->getMake());
-        $vehicle->setModel($data['model'] ?? $vehicle->getModel());
-        $vehicle->setYear($data['year'] ?? $vehicle->getYear());
-        $vehicle->setEngineType($data['engineType'] ?? $vehicle->getEngineType());
-        $vehicle->setBatteryCapacity($data['batteryCapacity'] ?? $vehicle->getBatteryCapacity());
-        $vehicle->setLastIotUpdate(isset($data['lastIotUpdate']) ? new \DateTime($data['lastIotUpdate']) : $vehicle->getLastIotUpdate());
-        return $vehicle;
-    }
-
-    private function findCustomer(int $customerId): Customer
-    {
-        $customer = $this->customerRepository->find($customerId);
-        if (!$customer) {
-            throw new BadRequestException('Customer not found');
+        $customer = $vehicle->getCustomer();
+        if (!$customer || !$this->customerRepository->find($customer->getId())) {
+            throw new BadRequestException('Invalid or missing customer.');
         }
-        return $customer;
     }
 }
 
