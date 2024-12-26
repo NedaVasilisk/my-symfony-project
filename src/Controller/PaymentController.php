@@ -23,6 +23,23 @@ class PaymentController extends AbstractController
         return $this->json($payments, Response::HTTP_OK, [], ['groups' => ['payments_detail', 'invoices_list']]);
     }
 
+    #[Route('/collection', name: 'app_payment_collection', methods: ['GET'])]
+    public function getCollection(Request $request, PaymentRepository $paymentRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $paymentsData = $paymentRepository->getAllPaymentsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $paymentsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['payments_detail', 'invoices_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_payment_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

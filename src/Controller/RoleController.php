@@ -23,6 +23,23 @@ class RoleController extends AbstractController
         return $this->json($roles, Response::HTTP_OK);
     }
 
+    #[Route('/collection', name: 'app_role_collection', methods: ['GET'])]
+    public function getCollection(Request $request, RoleRepository $roleRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $rolesData = $roleRepository->getAllRolesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $rolesData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['role_detail']]
+        );
+    }
+
     #[Route('/create', name: 'app_role_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

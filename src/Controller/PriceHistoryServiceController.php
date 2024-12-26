@@ -22,6 +22,23 @@ class PriceHistoryServiceController extends AbstractController
         return $this->json($priceHistory, JsonResponse::HTTP_OK);
     }
 
+    #[Route('/collection', name: 'app_price_history_service_collection', methods: ['GET'])]
+    public function getCollection(Request $request, PriceHistoryServiceRepository $priceHistoryServiceRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $priceHistoryServicesData = $priceHistoryServiceRepository->getAllPriceHistoryServicesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $priceHistoryServicesData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['price_history_service_list', 'service_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_price_history_service_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

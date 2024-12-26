@@ -22,6 +22,23 @@ class PartController extends AbstractController
         return $this->json($parts, JsonResponse::HTTP_OK);
     }
 
+    #[Route('/collection', name: 'app_part_collection', methods: ['GET'])]
+    public function getCollection(Request $request, PartRepository $partRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $partsData = $partRepository->getAllPartsByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $partsData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['part_detail']]
+        );
+    }
+
     #[Route('/create', name: 'app_part_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

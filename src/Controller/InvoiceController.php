@@ -23,6 +23,23 @@ class InvoiceController extends AbstractController
         return $this->json($invoices, Response::HTTP_OK, [], ['groups' => ['invoices_detail', 'repair_list']]);
     }
 
+    #[Route('/collection', name: 'app_invoice_collection', methods: ['GET'])]
+    public function getCollection(Request $request, InvoiceRepository $invoiceRepository): JsonResponse
+    {
+        $requestData = $request->query->all();
+        $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
+        $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
+
+        $invoicesData = $invoiceRepository->getAllInvoicesByFilter($requestData, $itemsPerPage, $page);
+
+        return $this->json(
+            $invoicesData,
+            JsonResponse::HTTP_OK,
+            [],
+            ['groups' => ['invoices_detail', 'repair_list']]
+        );
+    }
+
     #[Route('/create', name: 'app_invoice_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
