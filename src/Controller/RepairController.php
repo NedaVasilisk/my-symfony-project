@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/repair')]
+#[Route('/api/repair')]
 class RepairController extends AbstractController
 {
     public function __construct(private RepairService $repairService) {}

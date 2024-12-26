@@ -2,27 +2,24 @@
 
 namespace App\Controller;
 
-use App\Entity\Customer;
 use App\Entity\Vehicle;
 use App\Form\VehicleType;
-use App\Repository\CustomerRepository;
 use App\Repository\VehicleRepository;
-use App\Service\RequestCheckerService;
 use App\Service\VehicleService;
-use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Constraints as Assert;
 
-#[Route('/vehicle')]
+#[Route('/api/vehicle')]
 class VehicleController extends AbstractController
 {
     public function __construct(private VehicleService $vehicleService) {}
 
     #[Route('/', name: 'app_vehicle_index', methods: ['GET'])]
+    #[IsGranted("Адміністратор")]
     public function index(VehicleRepository $vehicleRepository): JsonResponse
     {
         $vehicles = $vehicleRepository->findAll();
@@ -30,6 +27,7 @@ class VehicleController extends AbstractController
     }
 
     #[Route('/collection', name: 'app_vehicle_collection', methods: ['GET'])]
+    #[IsGranted("ROLE_USER")]
     public function getCollection(Request $request, VehicleRepository $vehicleRepository): JsonResponse
     {
         $requestData = $request->query->all();
@@ -42,6 +40,7 @@ class VehicleController extends AbstractController
     }
 
     #[Route('/create', name: 'app_vehicle_create', methods: ['POST'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
@@ -50,12 +49,14 @@ class VehicleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_vehicle_show', methods: ['GET'])]
+    #[IsGranted("ROLE_USER")]
     public function show(Vehicle $vehicle): JsonResponse
     {
         return $this->json($vehicle, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
     }
 
     #[Route('/{id}/edit', name: 'app_vehicle_edit', methods: ['PUT', 'PATCH'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function edit(Request $request, Vehicle $vehicle): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
@@ -64,6 +65,7 @@ class VehicleController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_vehicle_delete', methods: ['DELETE'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function delete(Vehicle $vehicle): JsonResponse
     {
         $this->vehicleService->deleteVehicle($vehicle);

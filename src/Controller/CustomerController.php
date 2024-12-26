@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/customer')]
+#[Route('/api/customer')]
 class CustomerController extends AbstractController
 {
     public function __construct(private CustomerService $customerService) {}

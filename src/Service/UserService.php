@@ -4,10 +4,14 @@ namespace App\Service;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserService
 {
-    public function __construct(private EntityManagerInterface $entityManager) {}
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $passwordHasher
+    ) {}
 
     public function getAllUsers(): array
     {
@@ -41,7 +45,10 @@ class UserService
     private function fillUserData(User $user, array $data): void
     {
         $user->setUsername($data['username'] ?? $user->getUsername());
-        $user->setPasswordHash($data['passwordHash'] ?? $user->getPasswordHash());
+        if (!empty($data['password'])) {
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
+            $user->setPassword($hashedPassword);
+        }
         $user->setFirstName($data['firstName'] ?? $user->getFirstName());
         $user->setLastName($data['lastName'] ?? $user->getLastName());
         $user->setEmail($data['email'] ?? $user->getEmail());
