@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/payment')]
+#[Route('api/payment')]
 class PaymentController extends AbstractController
 {
     public function __construct(private PaymentService $paymentService) {}

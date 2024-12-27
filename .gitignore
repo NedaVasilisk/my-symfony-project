@@ -31,3 +31,4 @@
 
 templates/
 /templates/
+/config/jwt/

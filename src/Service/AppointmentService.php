@@ -42,8 +42,13 @@ class AppointmentService
     {
         $appointment->setCustomer($customer);
         $appointment->setVehicle($vehicle);
-        $appointment->setScheduledDate(new \DateTime($data['scheduledDate']));
-        $appointment->setStatus($data['status']);
+        if (isset($data['scheduledDate'])) {
+            $appointment->setScheduledDate(new \DateTime($data['scheduledDate']));
+        }
+
+        if (isset($data['status'])) {
+            $appointment->setStatus($data['status']);
+        }
         return $appointment;
     }
 

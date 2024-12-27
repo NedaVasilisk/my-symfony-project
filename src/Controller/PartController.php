@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/part')]
+#[Route('api/part')]
 class PartController extends AbstractController
 {
     public function __construct(private PartService $partService) {}
