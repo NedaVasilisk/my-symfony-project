@@ -24,26 +24,7 @@ class RepairItemRepository extends ServiceEntityRepository
 
     public function getAllRepairItemsByFilter(array $data, int $itemsPerPage, int $page): array
     {
-        $queryBuilder = $this->createQueryBuilder('ri')
-            ->leftJoin('ri.repair', 'r')
-            ->addSelect('r')
-            ->leftJoin('ri.service', 's')
-            ->addSelect('s');
-
-        if (isset($data['id'])) {
-            $queryBuilder->andWhere('ri.id = :id')
-                ->setParameter('id', $data['id']);
-        }
-
-        if (isset($data['repair'])) {
-            $queryBuilder->andWhere('r.id = :repair')
-                ->setParameter('repair', $data['repair']);
-        }
-
-        if (isset($data['service'])) {
-            $queryBuilder->andWhere('s.id = :service')
-                ->setParameter('service', $data['service']);
-        }
+        $queryBuilder = $this->createQueryBuilder('ri');
 
         if (isset($data['quantity'])) {
             if (is_array($data['quantity'])) {
@@ -77,20 +58,7 @@ class RepairItemRepository extends ServiceEntityRepository
             }
         }
 
-        if (isset($data['sort'])) {
-            $sortParams = explode(',', $data['sort']);
-            if (count($sortParams) === 2) {
-                [$sortField, $sortOrder] = $sortParams;
-                $allowedSortFields = ['id', 'quantity', 'priceAtTime'];
-                $allowedSortOrder = ['asc', 'desc'];
-
-                if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {
-                    $queryBuilder->orderBy('ri.' . $sortField, strtoupper($sortOrder));
-                }
-            }
-        } else {
-            $queryBuilder->orderBy('ri.id', 'ASC');
-        }
+        $queryBuilder->orderBy('ri.id', 'ASC');
 
         $paginator = new Paginator($queryBuilder);
         $totalItems = count($paginator);

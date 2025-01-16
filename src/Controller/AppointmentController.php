@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/appointment')]
+#[Route('api/appointments')]
 class AppointmentController extends AbstractController
 {
     public function __construct(private AppointmentService $appointmentService) {}

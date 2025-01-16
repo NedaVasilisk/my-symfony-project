@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/price-history-service')]
+#[Route('api/price-history-services')]
 class PriceHistoryServiceController extends AbstractController
 {
     public function __construct(private PriceHistoryServiceService $priceHistoryServiceService) {}
