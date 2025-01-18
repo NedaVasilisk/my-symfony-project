@@ -10,24 +10,48 @@ use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class RepairAssignmentService
 {
-    public function __construct(private EntityManagerInterface $entityManager, private RequestCheckerService $requestCheckerService) {}
+    public function __construct(private readonly EntityManagerInterface $entityManager, private RequestCheckerService $requestCheckerService) {}
 
     public function createRepairAssignment(array $data): RepairAssignment
     {
-        $this->requestCheckerService->check($data, ['repair_id']);
-        $repair = $this->findRepair($data['repair_id']);
-        $employee = isset($data['employee_id']) ? $this->findEmployee($data['employee_id']) : null;
-        $repairAssignment = $this->fillRepairAssignmentData(new RepairAssignment(), $repair, $employee);
+        if (empty($data['repair_id'])) {
+            throw new BadRequestException('Repair ID is required');
+        }
+
+        $repair = $this->entityManager->getRepository(Repair::class)->find($data['repair_id']);
+        if (!$repair) {
+            throw new BadRequestException('Repair not found');
+        }
+
+        $employee = null;
+        if (!empty($data['employeeId'])) {
+            $employee = $this->entityManager->getRepository(Employee::class)->find($data['employeeId']);
+            if (!$employee) {
+                throw new BadRequestException('Employee not found');
+            }
+        }
+
+        $repairAssignment = new RepairAssignment();
+        $repairAssignment->setRepair($repair);
+        $repairAssignment->setEmployee($employee);
+
         $this->entityManager->persist($repairAssignment);
         $this->entityManager->flush();
+
         return $repairAssignment;
     }
 
     public function updateRepairAssignment(RepairAssignment $repairAssignment, array $data): RepairAssignment
     {
-        $employee = isset($data['employee_id']) ? $this->findEmployee($data['employee_id']) : $repairAssignment->getEmployee();
-        $this->fillRepairAssignmentData($repairAssignment, $repairAssignment->getRepair(), $employee);
+        if (isset($data['employeeId'])) {
+            $employee = $this->entityManager->getRepository(Employee::class)->find($data['employeeId']);
+            if (!$employee) {
+                throw new BadRequestException('Employee not found');
+            }
+            $repairAssignment->setEmployee($employee);
+        }
         $this->entityManager->flush();
+
         return $repairAssignment;
     }
 

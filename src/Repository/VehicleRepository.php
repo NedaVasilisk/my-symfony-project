@@ -76,7 +76,6 @@ class VehicleRepository extends ServiceEntityRepository
                         ->setParameter('yearMax', $data['year']['max']);
                 }
             } else {
-                // Точний збіг
                 $queryBuilder->andWhere('v.year = :year')
                     ->setParameter('year', $data['year']);
             }
@@ -98,7 +97,6 @@ class VehicleRepository extends ServiceEntityRepository
                         ->setParameter('batteryMax', $data['batteryCapacity']['max']);
                 }
             } else {
-                // Точний збіг
                 $queryBuilder->andWhere('v.batteryCapacity = :batteryCapacity')
                     ->setParameter('batteryCapacity', $data['batteryCapacity']);
             }
@@ -115,7 +113,6 @@ class VehicleRepository extends ServiceEntityRepository
                         ->setParameter('lastIotUpdateTo', new \DateTime($data['lastIotUpdate']['to']));
                 }
             } else {
-                // Точний збіг або лише дата "from"
                 $queryBuilder->andWhere('v.lastIotUpdate = :lastIotUpdate')
                     ->setParameter('lastIotUpdate', new \DateTime($data['lastIotUpdate']));
             }

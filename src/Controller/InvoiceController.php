@@ -9,22 +9,17 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Exception;
 
 #[Route('api/invoices')]
 class InvoiceController extends AbstractController
 {
-    public function __construct(private InvoiceService $invoiceService) {}
+    public function __construct(private readonly InvoiceService $invoiceService) {}
 
     #[Route('/', name: 'app_invoice_index', methods: ['GET'])]
-    public function index(InvoiceRepository $repository): JsonResponse
-    {
-        $invoices = $repository->findAll();
-        return $this->json($invoices, Response::HTTP_OK, [], ['groups' => ['invoices_detail', 'repair_list']]);
-    }
-
-    #[Route('/collection', name: 'app_invoice_collection', methods: ['GET'])]
-    public function getCollection(Request $request, InvoiceRepository $invoiceRepository): JsonResponse
+    public function index(Request $request, InvoiceRepository $invoiceRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -32,20 +27,20 @@ class InvoiceController extends AbstractController
 
         $invoicesData = $invoiceRepository->getAllInvoicesByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $invoicesData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['invoices_detail', 'repair_list']]
-        );
+        return $this->json($invoicesData, Response::HTTP_OK, [], ['groups' => ['invoices_detail', 'repair_list']]);
     }
 
-    #[Route('/create', name: 'app_invoice_create', methods: ['POST'])]
+    #[Route('/', name: 'app_invoice_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $invoice = $this->invoiceService->createInvoice($requestData);
-        return $this->json($invoice, JsonResponse::HTTP_CREATED);
+
+        try {
+            $this->invoiceService->createInvoice($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_invoice_show', methods: ['GET'])]
@@ -54,18 +49,37 @@ class InvoiceController extends AbstractController
         return $this->json($invoice, Response::HTTP_OK, [], ['groups' => ['invoices_detail', 'repair_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_invoice_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Invoice $invoice): JsonResponse
+    #[Route('/{id}', name: 'app_invoice_edit', methods: ['PUT', 'PATCH'])]
+    public function edit(int $id, Request $request, InvoiceRepository $invoiceRepository): JsonResponse
     {
+        $invoice = $invoiceRepository->find($id);
+        if (!$invoice) {
+            throw new NotFoundHttpException('Invoice not found');
+        }
+
         $requestData = json_decode($request->getContent(), true);
-        $updatedInvoice = $this->invoiceService->updateInvoice($invoice, $requestData);
-        return $this->json($updatedInvoice, JsonResponse::HTTP_OK);
+
+        try {
+            $this->invoiceService->updateInvoice($invoice, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_invoice_delete', methods: ['DELETE'])]
-    public function delete(Invoice $invoice): JsonResponse
+    #[Route('/{id}', name: 'app_invoice_delete', methods: ['DELETE'])]
+    public function delete(int $id, InvoiceRepository $invoiceRepository): JsonResponse
     {
-        $this->invoiceService->deleteInvoice($invoice);
-        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
+        $invoice = $invoiceRepository->find($id);
+        if (!$invoice) {
+            throw new NotFoundHttpException('Invoice not found');
+        }
+
+        try {
+            $this->invoiceService->deleteInvoice($invoice);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }

@@ -14,7 +14,7 @@ class PriceHistoryPart
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    #[Groups(['price_history_service_list'])]
+    #[Groups(['price_history_part_list'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Part::class)]

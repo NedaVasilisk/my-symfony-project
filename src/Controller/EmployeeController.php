@@ -9,22 +9,17 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Exception;
 
 #[Route('api/employees')]
 class EmployeeController extends AbstractController
 {
-    public function __construct(private EmployeeService $employeeService) {}
+    public function __construct(private readonly EmployeeService $employeeService) {}
 
     #[Route('/', name: 'app_employee_index', methods: ['GET'])]
-    public function index(EmployeeRepository $repository): JsonResponse
-    {
-        $employees = $repository->findAll();
-        return $this->json($employees, Response::HTTP_OK, [], ['groups' => ['employee_detail', 'user_list']]);
-    }
-
-    #[Route('/collection', name: 'app_employee_collection', methods: ['GET'])]
-    public function getCollection(Request $request, EmployeeRepository $employeeRepository): JsonResponse
+    public function index(Request $request, EmployeeRepository $employeeRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -32,20 +27,20 @@ class EmployeeController extends AbstractController
 
         $employeesData = $employeeRepository->getAllEmployeesByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $employeesData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['employee_detail', 'user_list']]
-        );
+        return $this->json($employeesData, Response::HTTP_OK, [], ['groups' => ['employee_detail', 'user_list']]);
     }
 
-    #[Route('/create', name: 'app_employee_create', methods: ['POST'])]
+    #[Route('/', name: 'app_employee_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $employee = $this->employeeService->createEmployee($requestData);
-        return $this->json($employee, JsonResponse::HTTP_CREATED);
+
+        try {
+            $this->employeeService->createEmployee($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_employee_show', methods: ['GET'])]
@@ -54,18 +49,37 @@ class EmployeeController extends AbstractController
         return $this->json($employee, Response::HTTP_OK, [], ['groups' => ['employee_detail', 'user_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_employee_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Employee $employee): JsonResponse
+    #[Route('/{id}', name: 'app_employee_edit', methods: ['PUT', 'PATCH'])]
+    public function edit(int $id, Request $request, EmployeeRepository $employeeRepository): JsonResponse
     {
+        $employee = $employeeRepository->find($id);
+        if (!$employee) {
+            throw new NotFoundHttpException('Employee not found');
+        }
+
         $requestData = json_decode($request->getContent(), true);
-        $updatedEmployee = $this->employeeService->updateEmployee($employee, $requestData);
-        return $this->json($updatedEmployee, JsonResponse::HTTP_OK);
+
+        try {
+            $this->employeeService->updateEmployee($employee, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_employee_delete', methods: ['DELETE'])]
-    public function delete(Employee $employee): JsonResponse
+    #[Route('/{id}', name: 'app_employee_delete', methods: ['DELETE'])]
+    public function delete(int $id, EmployeeRepository $employeeRepository): JsonResponse
     {
-        $this->employeeService->deleteEmployee($employee);
-        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
+        $employee = $employeeRepository->find($id);
+        if (!$employee) {
+            throw new NotFoundHttpException('Employee not found');
+        }
+
+        try {
+            $this->employeeService->deleteEmployee($employee);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }

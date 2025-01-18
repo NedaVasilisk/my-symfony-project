@@ -30,14 +30,9 @@ class RepairAssignmentRepository extends ServiceEntityRepository
             ->leftJoin('ra.employee', 'e')
             ->addSelect('e');
 
-        if (isset($data['id'])) {
-            $queryBuilder->andWhere('ra.id = :id')
-                ->setParameter('id', $data['id']);
-        }
-
-        if (isset($data['repair'])) {
-            $queryBuilder->andWhere('r.id = :repair')
-                ->setParameter('repair', $data['repair']);
+        if (isset($data['repair_id'])) {
+            $queryBuilder->andWhere('r.id = :repairId')
+                ->setParameter('repairId', $data['repair_id']);
         }
 
         if (isset($data['employee'])) {
@@ -45,20 +40,7 @@ class RepairAssignmentRepository extends ServiceEntityRepository
                 ->setParameter('employee', $data['employee']);
         }
 
-        if (isset($data['sort'])) {
-            $sortParams = explode(',', $data['sort']);
-            if (count($sortParams) === 2) {
-                [$sortField, $sortOrder] = $sortParams;
-                $allowedSortFields = ['id', 'repair', 'employee'];
-                $allowedSortOrder = ['asc', 'desc'];
-
-                if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {
-                    $queryBuilder->orderBy('ra.' . $sortField, strtoupper($sortOrder));
-                }
-            }
-        } else {
-            $queryBuilder->orderBy('ra.id', 'ASC');
-        }
+        $queryBuilder->orderBy('ra.id', 'ASC');
 
         $paginator = new Paginator($queryBuilder);
         $totalItems = count($paginator);

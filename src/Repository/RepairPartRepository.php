@@ -24,25 +24,11 @@ class RepairPartRepository extends ServiceEntityRepository
 
     public function getAllRepairPartsByFilter(array $data, int $itemsPerPage, int $page): array
     {
-        $queryBuilder = $this->createQueryBuilder('rp')
-            ->leftJoin('rp.repair', 'r')
-            ->addSelect('r')
-            ->leftJoin('rp.part', 'p')
-            ->addSelect('p');
+        $queryBuilder = $this->createQueryBuilder('rp');
 
-        if (isset($data['id'])) {
-            $queryBuilder->andWhere('rp.id = :id')
-                ->setParameter('id', $data['id']);
-        }
-
-        if (isset($data['repair'])) {
-            $queryBuilder->andWhere('r.id = :repair')
-                ->setParameter('repair', $data['repair']);
-        }
-
-        if (isset($data['part'])) {
-            $queryBuilder->andWhere('p.id = :part')
-                ->setParameter('part', $data['part']);
+        if (isset($data['repair_id'])) {
+            $queryBuilder->andWhere('rp.repair = :repairId')
+                ->setParameter('repairId', $data['repair_id']);
         }
 
         if (isset($data['quantity'])) {
@@ -77,20 +63,7 @@ class RepairPartRepository extends ServiceEntityRepository
             }
         }
 
-        if (isset($data['sort'])) {
-            $sortParams = explode(',', $data['sort']);
-            if (count($sortParams) === 2) {
-                [$sortField, $sortOrder] = $sortParams;
-                $allowedSortFields = ['id', 'quantity', 'priceAtTime'];
-                $allowedSortOrder = ['asc', 'desc'];
-
-                if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {
-                    $queryBuilder->orderBy('rp.' . $sortField, strtoupper($sortOrder));
-                }
-            }
-        } else {
-            $queryBuilder->orderBy('rp.id', 'ASC');
-        }
+        $queryBuilder->orderBy('rp.id', 'ASC');
 
         $paginator = new Paginator($queryBuilder);
         $totalItems = count($paginator);

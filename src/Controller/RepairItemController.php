@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('api/repairs/{repairId}/items')]
@@ -23,15 +24,19 @@ class RepairItemController extends AbstractController
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
         $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
 
-        $repairItemsData = $repairItemRepository->getAllRepairItemsByFilter(array_merge($requestData, ['repair_id' => $repairId]), $itemsPerPage, $page);
+        // Передаємо repairID у фільтр
+        $requestData['repair_id'] = $repairId;
+
+        $repairItemsData = $repairItemRepository->getAllRepairItemsByFilter($requestData, $itemsPerPage, $page);
 
         return $this->json($repairItemsData, Response::HTTP_OK, [], ['groups' => ['repair_item_detail', 'repair_list', 'service_list']]);
     }
 
-    #[Route('/create', name: 'app_repair_item_create', methods: ['POST'])]
+    #[Route('/', name: 'app_repair_item_create', methods: ['POST'])]
     public function create(int $repairId, Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
+
         $requestData['repair_id'] = $repairId;
 
         $this->repairItemService->createRepairItem($requestData);
@@ -40,20 +45,20 @@ class RepairItemController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_repair_item_show', methods: ['GET'])]
-    public function show(RepairItem $repairItem, int $repairId): JsonResponse
+    public function show(int $repairId, RepairItem $repairItem): JsonResponse
     {
         if ($repairItem->getRepair()->getId() !== $repairId) {
-            return $this->json(['error' => 'Repair item not found for this repair'], Response::HTTP_NOT_FOUND);
+            throw new NotFoundHttpException('Repair item not found for this repair');
         }
 
         return $this->json($repairItem, Response::HTTP_OK, [], ['groups' => ['repair_item_detail', 'repair_list', 'service_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_repair_item_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, RepairItem $repairItem, int $repairId): JsonResponse
+    #[Route('/{id}', name: 'app_repair_item_edit', methods: ['PUT', 'PATCH'])]
+    public function edit(int $repairId, Request $request, RepairItem $repairItem): JsonResponse
     {
         if ($repairItem->getRepair()->getId() !== $repairId) {
-            return $this->json(['error' => 'Repair item not found for this repair'], Response::HTTP_NOT_FOUND);
+            throw new NotFoundHttpException('Repair item not found for this repair');
         }
 
         $requestData = json_decode($request->getContent(), true);
@@ -62,11 +67,11 @@ class RepairItemController extends AbstractController
         return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
     }
 
-    #[Route('/{id}/delete', name: 'app_repair_item_delete', methods: ['DELETE'])]
-    public function delete(RepairItem $repairItem, int $repairId): JsonResponse
+    #[Route('/{id}', name: 'app_repair_item_delete', methods: ['DELETE'])]
+    public function delete(int $repairId, RepairItem $repairItem): JsonResponse
     {
         if ($repairItem->getRepair()->getId() !== $repairId) {
-            return $this->json(['error' => 'Repair item not found for this repair'], Response::HTTP_NOT_FOUND);
+            throw new NotFoundHttpException('Repair item not found for this repair');
         }
 
         $this->repairItemService->deleteRepairItem($repairItem);

@@ -14,17 +14,10 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('api/repairs')]
 class RepairController extends AbstractController
 {
-    public function __construct(private RepairService $repairService) {}
+    public function __construct(private readonly RepairService $repairService) {}
 
     #[Route('/', name: 'app_repair_index', methods: ['GET'])]
-    public function index(RepairRepository $repairRepository): JsonResponse
-    {
-        $repairs = $repairRepository->findAll();
-        return $this->json($repairs, Response::HTTP_OK, [], ['groups' => ['repair_detail', 'vehicle_list']]);
-    }
-
-    #[Route('/collection', name: 'app_repair_collection', methods: ['GET'])]
-    public function getCollection(Request $request, RepairRepository $repairRepository): JsonResponse
+    public function index(Request $request, RepairRepository $repairRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -32,20 +25,20 @@ class RepairController extends AbstractController
 
         $repairsData = $repairRepository->getAllRepairsByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $repairsData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['repair_detail', 'vehicle_list']]
-        );
+        return $this->json($repairsData, Response::HTTP_OK, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
-    #[Route('/create', name: 'app_repair_create', methods: ['POST'])]
+    #[Route('/', name: 'app_repair_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $repair = $this->repairService->createRepair($requestData);
-        return $this->json($repair, Response::HTTP_CREATED);
+
+        try {
+            $repair = $this->repairService->createRepair($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED, [], ['groups' => ['repair_detail']]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_repair_show', methods: ['GET'])]
@@ -54,18 +47,27 @@ class RepairController extends AbstractController
         return $this->json($repair, Response::HTTP_OK, [], ['groups' => ['repair_detail', 'vehicle_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_repair_edit', methods: ['PUT', 'PATCH'])]
+    #[Route('/{id}', name: 'app_repair_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Repair $repair): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $updatedRepair = $this->repairService->updateRepair($repair, $requestData);
-        return $this->json($updatedRepair, Response::HTTP_OK);
+
+        try {
+            $updatedRepair = $this->repairService->updateRepair($repair, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['repair_detail']]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_repair_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'app_repair_delete', methods: ['DELETE'])]
     public function delete(Repair $repair): JsonResponse
     {
-        $this->repairService->deleteRepair($repair);
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        try {
+            $this->repairService->deleteRepair($repair);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }
