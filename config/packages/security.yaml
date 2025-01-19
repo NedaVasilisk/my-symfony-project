@@ -21,6 +21,12 @@ security:
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
                 username_path: email
                 password_path: password
+
+        refresh_token:
+            pattern: ^/api/token/refresh
+            stateless: true
+            security: false
+
         api:
             pattern: ^/api
             stateless: true
@@ -35,6 +41,7 @@ security:
     access_control:
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
