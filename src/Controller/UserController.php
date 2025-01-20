@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\UserService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,18 +37,18 @@ class UserController extends AbstractController
         try {
             $user = $this->userService->createUser($requestData);
             return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
+    #[Route('/{id<\d+>}', name: 'app_user_show', methods: ['GET'])]
     public function show(User $user): JsonResponse
     {
         return $this->json($user, Response::HTTP_OK, [], ['groups' => ['user_detail', 'role_list']]);
     }
 
-    #[Route('/{id}', name: 'app_user_edit', methods: ['PUT', 'PATCH'])]
+    #[Route('/{id<\d+>}', name: 'app_user_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, User $user): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
@@ -55,18 +56,35 @@ class UserController extends AbstractController
         try {
             $updatedUser = $this->userService->updateUser($user, $requestData);
             return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    #[Route('/{id}', name: 'app_user_delete', methods: ['DELETE'])]
+    #[Route('/{id<\d+>}', name: 'app_user_delete', methods: ['DELETE'])]
     public function delete(User $user): JsonResponse
     {
         try {
             $this->userService->deleteUser($user);
             return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/me', name: 'app_user_me', methods: ['GET'])]
+    public function me(): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+
+            if (!$user) {
+                return $this->json(['error' => 'User not found'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            return $this->json($user, Response::HTTP_OK, [], ['groups' => ['user_detail', 'role_list']]);
+
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
