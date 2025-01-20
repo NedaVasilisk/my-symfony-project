@@ -9,8 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('api/repairs/{repairId}/parts')]
 class RepairPartController extends AbstractController
@@ -48,7 +47,7 @@ class RepairPartController extends AbstractController
         $repairPart = $repairPartRepository->find($id);
 
         if (!$repairPart || $repairPart->getRepair()->getId() !== $repairId) {
-            throw new NotFoundHttpException('Repair part not found for this repair');
+            throw $this->createNotFoundException('Repair part not found for this repair');
         }
 
         return $this->json($repairPart, Response::HTTP_OK, [], ['groups' => ['repair_part_detail', 'repair_list', 'part_list']]);

@@ -9,7 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
+use Exception;
 
 #[Route('api/roles')]
 class RoleController extends AbstractController
@@ -34,9 +35,9 @@ class RoleController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $role = $this->roleService->createRole($requestData);
+            $this->roleService->createRole($requestData);
             return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -53,9 +54,9 @@ class RoleController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $updatedRole = $this->roleService->updateRole($role, $requestData);
+            $this->roleService->updateRole($role, $requestData);
             return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -66,7 +67,7 @@ class RoleController extends AbstractController
         try {
             $this->roleService->deleteRole($role);
             return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }

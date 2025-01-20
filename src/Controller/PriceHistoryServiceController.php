@@ -11,8 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('api/services/{serviceId}/price-history')]
 class PriceHistoryServiceController extends AbstractController
@@ -26,9 +25,8 @@ class PriceHistoryServiceController extends AbstractController
         PriceHistoryServiceRepository $repository,
         ServiceRepository $serviceRepository
     ): JsonResponse {
-        $service = $serviceRepository->find($serviceId);
-        if (!$service) {
-            throw new NotFoundHttpException('Service not found');
+        if (!$serviceRepository->find($serviceId)) {
+            throw $this->createNotFoundException('Service not found');
         }
 
         $requestData = $request->query->all();
@@ -48,9 +46,8 @@ class PriceHistoryServiceController extends AbstractController
         Request $request,
         ServiceRepository $serviceRepository
     ): JsonResponse {
-        $service = $serviceRepository->find($serviceId);
-        if (!$service) {
-            throw new NotFoundHttpException('Service not found');
+        if (!$serviceRepository->find($serviceId)) {
+            throw $this->createNotFoundException('Service not found');
         }
 
         $requestData = json_decode($request->getContent(), true);
@@ -80,13 +77,11 @@ class PriceHistoryServiceController extends AbstractController
         PriceHistoryService $priceHistoryService,
         ServiceRepository $serviceRepository
     ): JsonResponse {
-        $service = $serviceRepository->find($serviceId);
-        if (!$service) {
-            throw new NotFoundHttpException('Service not found');
-        }
+        $service = $serviceRepository->find($serviceId)
+            ?? throw $this->createNotFoundException('Service not found');
 
         if ($priceHistoryService->getService()->getId() !== $service->getId()) {
-            throw new NotFoundHttpException('Price history entry not found for this service');
+            throw $this->createNotFoundException('Price history entry not found for this service');
         }
 
         return $this->json($priceHistoryService, Response::HTTP_OK, [], ['groups' => ['price_history_service_list', 'service_list']]);
@@ -99,13 +94,11 @@ class PriceHistoryServiceController extends AbstractController
         Request $request,
         ServiceRepository $serviceRepository
     ): JsonResponse {
-        $service = $serviceRepository->find($serviceId);
-        if (!$service) {
-            throw new NotFoundHttpException('Service not found');
-        }
+        $service = $serviceRepository->find($serviceId)
+            ?? throw $this->createNotFoundException('Service not found');
 
         if ($priceHistoryService->getService()->getId() !== $service->getId()) {
-            throw new NotFoundHttpException('Price history entry not found for this service');
+            throw $this->createNotFoundException('Price history entry not found for this service');
         }
 
         $requestData = json_decode($request->getContent(), true);
@@ -124,13 +117,11 @@ class PriceHistoryServiceController extends AbstractController
         PriceHistoryService $priceHistoryService,
         ServiceRepository $serviceRepository
     ): JsonResponse {
-        $service = $serviceRepository->find($serviceId);
-        if (!$service) {
-            throw new NotFoundHttpException('Service not found');
-        }
+        $service = $serviceRepository->find($serviceId)
+            ?? throw $this->createNotFoundException('Service not found');
 
         if ($priceHistoryService->getService()->getId() !== $service->getId()) {
-            throw new NotFoundHttpException('Price history entry not found for this service');
+            throw $this->createNotFoundException('Price history entry not found for this service');
         }
 
         $this->priceHistoryServiceService->deletePriceHistoryService($priceHistoryService);

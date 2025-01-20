@@ -2,20 +2,15 @@
 
 namespace App\Controller;
 
-use App\Entity\Customer;
 use App\Entity\Vehicle;
-use App\Form\VehicleType;
-use App\Repository\CustomerRepository;
 use App\Repository\VehicleRepository;
-use App\Service\RequestCheckerService;
 use App\Service\VehicleService;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Routing\Attribute\Route;
+use Exception;
 
 #[Route('api/vehicles')]
 class VehicleController extends AbstractController
@@ -40,9 +35,9 @@ class VehicleController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $vehicle = $this->vehicleService->createVehicle($requestData);
+            $this->vehicleService->createVehicle($requestData);
             return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED, [], ['groups' => ['vehicle_detail']]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -59,9 +54,9 @@ class VehicleController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $updatedVehicle = $this->vehicleService->updateVehicle($vehicle, $requestData);
+            $this->vehicleService->updateVehicle($vehicle, $requestData);
             return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['vehicle_detail']]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -72,7 +67,7 @@ class VehicleController extends AbstractController
         try {
             $this->vehicleService->deleteVehicle($vehicle);
             return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }

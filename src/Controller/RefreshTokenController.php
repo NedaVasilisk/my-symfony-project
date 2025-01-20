@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class RefreshTokenController extends AbstractController
 {
@@ -36,7 +36,6 @@ class RefreshTokenController extends AbstractController
         }
 
         try {
-            // Розшифровка рефреш-токена
             $payload = $this->jwtManager->parse($refreshToken);
 
             if (!$payload || !isset($payload['type']) || $payload['type'] !== 'refresh') {

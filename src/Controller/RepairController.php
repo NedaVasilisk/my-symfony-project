@@ -9,7 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
+use Exception;
 
 #[Route('api/repairs')]
 class RepairController extends AbstractController
@@ -34,9 +35,9 @@ class RepairController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $repair = $this->repairService->createRepair($requestData);
+            $this->repairService->createRepair($requestData);
             return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED, [], ['groups' => ['repair_detail']]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -53,9 +54,9 @@ class RepairController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $updatedRepair = $this->repairService->updateRepair($repair, $requestData);
+            $this->repairService->updateRepair($repair, $requestData);
             return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['repair_detail']]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
@@ -66,7 +67,7 @@ class RepairController extends AbstractController
         try {
             $this->repairService->deleteRepair($repair);
             return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }

@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('api/users')]
 class UserController extends AbstractController
@@ -35,7 +35,7 @@ class UserController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $user = $this->userService->createUser($requestData);
+            $this->userService->createUser($requestData);
             return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
         } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
@@ -54,7 +54,7 @@ class UserController extends AbstractController
         $requestData = json_decode($request->getContent(), true);
 
         try {
-            $updatedUser = $this->userService->updateUser($user, $requestData);
+            $this->userService->updateUser($user, $requestData);
             return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
         } catch (Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);

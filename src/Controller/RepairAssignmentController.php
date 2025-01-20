@@ -9,8 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('api/repairs/{repairId}/assignments')]
 class RepairAssignmentController extends AbstractController
@@ -47,7 +46,7 @@ class RepairAssignmentController extends AbstractController
     public function show(int $repairId, RepairAssignment $repairAssignment): JsonResponse
     {
         if ($repairAssignment->getRepair()->getId() !== $repairId) {
-            throw new NotFoundHttpException('Repair assignment not found for this repair');
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
         }
 
         return $this->json($repairAssignment, Response::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
@@ -57,12 +56,12 @@ class RepairAssignmentController extends AbstractController
     public function edit(int $repairId, Request $request, RepairAssignment $repairAssignment): JsonResponse
     {
         if ($repairAssignment->getRepair()->getId() !== $repairId) {
-            throw new NotFoundHttpException('Repair assignment not found for this repair');
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
         }
 
         $requestData = json_decode($request->getContent(), true);
 
-        $updatedRepairAssignment = $this->repairAssignmentService->updateRepairAssignment($repairAssignment, $requestData);
+        $this->repairAssignmentService->updateRepairAssignment($repairAssignment, $requestData);
 
         return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['repair_assignment_detail']]);
     }
@@ -71,7 +70,7 @@ class RepairAssignmentController extends AbstractController
     public function delete(int $repairId, RepairAssignment $repairAssignment): JsonResponse
     {
         if ($repairAssignment->getRepair()->getId() !== $repairId) {
-            throw new NotFoundHttpException('Repair assignment not found for this repair');
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
         }
 
         $this->repairAssignmentService->deleteRepairAssignment($repairAssignment);
