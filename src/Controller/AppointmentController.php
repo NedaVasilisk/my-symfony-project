@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Entity\Appointment;
 use App\Repository\AppointmentRepository;
 use App\Service\AppointmentService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Exception;
 
 #[Route('api/appointments')]
 class AppointmentController extends AbstractController

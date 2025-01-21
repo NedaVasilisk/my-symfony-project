@@ -6,13 +6,13 @@ use App\Entity\PriceHistoryPart;
 use App\Repository\PartRepository;
 use App\Repository\PriceHistoryPartRepository;
 use App\Service\PriceHistoryPartService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Exception;
 
 #[Route('api/parts/{partId}/price-history')]
 class PriceHistoryPartController extends AbstractController

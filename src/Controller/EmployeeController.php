@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Employee;
 use App\Repository\EmployeeRepository;
 use App\Service\EmployeeService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Exception;
 
 #[Route('api/employees')]
 class EmployeeController extends AbstractController

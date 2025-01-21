@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Invoice;
 use App\Repository\InvoiceRepository;
 use App\Service\InvoiceService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Exception;
 
 #[Route('api/invoices')]
 class InvoiceController extends AbstractController

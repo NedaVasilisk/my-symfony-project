@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Entity\Service;
 use App\Repository\ServiceRepository;
 use App\Service\ServiceService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Exception;
 
 #[Route('api/services')]
 class ServiceController extends AbstractController

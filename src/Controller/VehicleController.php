@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Entity\Vehicle;
 use App\Repository\VehicleRepository;
 use App\Service\VehicleService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Exception;
 
 #[Route('api/vehicles')]
 class VehicleController extends AbstractController

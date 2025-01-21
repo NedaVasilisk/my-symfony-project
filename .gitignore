@@ -24,10 +24,16 @@
 # VS Code
 .vscode/
 
-templates/
-/templates/
+/templates/BackEnd
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 .rnd
 ###< lexik/jwt-authentication-bundle ###
 
+
+###> symfony/webpack-encore-bundle ###
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
+###< symfony/webpack-encore-bundle ###
