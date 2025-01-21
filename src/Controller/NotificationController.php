@@ -4,27 +4,23 @@ namespace App\Controller;
 
 use App\Entity\Notification;
 use App\Repository\NotificationRepository;
+use App\Repository\UserRepository;
 use App\Service\NotificationService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/notification')]
+#[Route('api/notifications')]
 class NotificationController extends AbstractController
 {
-    public function __construct(private NotificationService $notificationService) {}
+    public function __construct(private readonly NotificationService $notificationService) {}
 
     #[Route('/', name: 'app_notification_index', methods: ['GET'])]
-    public function index(NotificationRepository $repository): JsonResponse
-    {
-        $notifications = $repository->findAll();
-        return $this->json($notifications, Response::HTTP_OK, [], ['groups' => ['notifications_detail', 'user_list']]);
-    }
-
-    #[Route('/collection', name: 'app_notification_collection', methods: ['GET'])]
-    public function getCollection(Request $request, NotificationRepository $notificationRepository): JsonResponse
+    public function index(Request $request, NotificationRepository $notificationRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -32,20 +28,30 @@ class NotificationController extends AbstractController
 
         $notificationsData = $notificationRepository->getAllNotificationsByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $notificationsData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['notifications_detail', 'user_list']]
-        );
+        return $this->json($notificationsData, Response::HTTP_OK, [], ['groups' => ['notifications_detail', 'user_list']]);
     }
 
-    #[Route('/create', name: 'app_notification_create', methods: ['POST'])]
-    public function create(Request $request): JsonResponse
+    #[Route('/', name: 'app_notification_create', methods: ['POST'])]
+    public function create(Request $request, UserRepository $userRepository): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $notification = $this->notificationService->createNotification($requestData);
-        return $this->json($notification, JsonResponse::HTTP_CREATED);
+
+        if (!isset($requestData['user_id'])) {
+            return $this->json(['error' => 'Missing required field: userId'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $userRepository->find($requestData['user_id']);
+        if (!$user) {
+            throw new NotFoundHttpException('User not found');
+        }
+
+        $requestData['user'] = $user;
+
+        try {
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_notification_show', methods: ['GET'])]
@@ -54,18 +60,34 @@ class NotificationController extends AbstractController
         return $this->json($notification, Response::HTTP_OK, [], ['groups' => ['notifications_detail', 'user_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_notification_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, Notification $notification): JsonResponse
+    #[Route('/{id}', name: 'app_notification_edit', methods: ['PUT', 'PATCH'])]
+    public function edit(Request $request, UserRepository $userRepository): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $updatedNotification = $this->notificationService->updateNotification($notification, $requestData);
-        return $this->json($updatedNotification, JsonResponse::HTTP_OK);
+
+        if (isset($requestData['user_id'])) {
+            $user = $userRepository->find($requestData['user_id']);
+            if (!$user) {
+                throw new NotFoundHttpException('User not found');
+            }
+            $requestData['user'] = $user;
+        }
+
+        try {
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_notification_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'app_notification_delete', methods: ['DELETE'])]
     public function delete(Notification $notification): JsonResponse
     {
-        $this->notificationService->deleteNotification($notification);
-        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
+        try {
+            $this->notificationService->deleteNotification($notification);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }

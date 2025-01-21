@@ -41,7 +41,7 @@ class UserService
     private function fillUserData(User $user, array $data): void
     {
         $user->setUsername($data['username'] ?? $user->getUsername());
-        $user->setPasswordHash($data['passwordHash'] ?? $user->getPasswordHash());
+        $user->setPassword($data['passwordHash'] ?? $user->getPassword());
         $user->setFirstName($data['firstName'] ?? $user->getFirstName());
         $user->setLastName($data['lastName'] ?? $user->getLastName());
         $user->setEmail($data['email'] ?? $user->getEmail());

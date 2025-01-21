@@ -2,35 +2,23 @@
 
 namespace App\Controller;
 
-use App\Entity\Customer;
 use App\Entity\Vehicle;
-use App\Form\VehicleType;
-use App\Repository\CustomerRepository;
 use App\Repository\VehicleRepository;
-use App\Service\RequestCheckerService;
 use App\Service\VehicleService;
-use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/vehicle')]
+#[Route('api/vehicles')]
 class VehicleController extends AbstractController
 {
-    public function __construct(private VehicleService $vehicleService) {}
+    public function __construct(private readonly VehicleService $vehicleService) {}
 
     #[Route('/', name: 'app_vehicle_index', methods: ['GET'])]
-    public function index(VehicleRepository $vehicleRepository): JsonResponse
-    {
-        $vehicles = $vehicleRepository->findAll();
-        return $this->json($vehicles, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
-    }
-
-    #[Route('/collection', name: 'app_vehicle_collection', methods: ['GET'])]
-    public function getCollection(Request $request, VehicleRepository $vehicleRepository): JsonResponse
+    public function index(Request $request, VehicleRepository $vehicleRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? (int)$requestData['itemsPerPage'] : 10;
@@ -38,15 +26,20 @@ class VehicleController extends AbstractController
 
         $vehiclesData = $vehicleRepository->getAllVehiclesByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json($vehiclesData, Response::HTTP_CREATED, [], ['groups' => ['vehicle_detail', 'customer_list']]);
+        return $this->json($vehiclesData, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
     }
 
-    #[Route('/create', name: 'app_vehicle_create', methods: ['POST'])]
+    #[Route('/', name: 'app_vehicle_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $vehicle = $this->vehicleService->createVehicle($requestData);
-        return $this->json($vehicle, Response::HTTP_CREATED, [], ['groups' => ['vehicle_detail', 'customer_list']]);
+
+        try {
+            $this->vehicleService->createVehicle($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED, [], ['groups' => ['vehicle_detail']]);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_vehicle_show', methods: ['GET'])]
@@ -55,19 +48,27 @@ class VehicleController extends AbstractController
         return $this->json($vehicle, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_vehicle_edit', methods: ['PUT', 'PATCH'])]
+    #[Route('/{id}', name: 'app_vehicle_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Vehicle $vehicle): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $updatedVehicle = $this->vehicleService->updateVehicle($vehicle, $requestData);
-        return $this->json($updatedVehicle, Response::HTTP_OK, [], ['groups' => ['vehicle_detail', 'customer_list']]);
+
+        try {
+            $this->vehicleService->updateVehicle($vehicle, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['vehicle_detail']]);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_vehicle_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'app_vehicle_delete', methods: ['DELETE'])]
     public function delete(Vehicle $vehicle): JsonResponse
     {
-        $this->vehicleService->deleteVehicle($vehicle);
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        try {
+            $this->vehicleService->deleteVehicle($vehicle);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
-
 }

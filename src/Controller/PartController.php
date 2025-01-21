@@ -5,25 +5,20 @@ namespace App\Controller;
 use App\Entity\Part;
 use App\Repository\PartRepository;
 use App\Service\PartService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/part')]
+#[Route('api/parts')]
 class PartController extends AbstractController
 {
-    public function __construct(private PartService $partService) {}
+    public function __construct(private readonly PartService $partService) {}
 
     #[Route('/', name: 'app_part_index', methods: ['GET'])]
-    public function index(PartRepository $partRepository): JsonResponse
-    {
-        $parts = $partRepository->findAll();
-        return $this->json($parts, JsonResponse::HTTP_OK);
-    }
-
-    #[Route('/collection', name: 'app_part_collection', methods: ['GET'])]
-    public function getCollection(Request $request, PartRepository $partRepository): JsonResponse
+    public function index(Request $request, PartRepository $partRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -31,40 +26,58 @@ class PartController extends AbstractController
 
         $partsData = $partRepository->getAllPartsByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $partsData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['part_detail']]
-        );
+        return $this->json($partsData, Response::HTTP_OK, [], ['groups' => ['part_detail']]);
     }
 
-    #[Route('/create', name: 'app_part_create', methods: ['POST'])]
+    #[Route('/', name: 'app_part_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $part = $this->partService->createPart($requestData);
-        return $this->json($part, JsonResponse::HTTP_CREATED);
+
+        if (!$requestData) {
+            return $this->json(['error' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $this->partService->createPart($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_part_show', methods: ['GET'])]
     public function show(Part $part): JsonResponse
     {
-        return $this->json($part, JsonResponse::HTTP_OK);
+        return $this->json($part, Response::HTTP_OK, [], ['groups' => ['part_detail']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_part_edit', methods: ['PUT', 'PATCH'])]
+    #[Route('/{id}', name: 'app_part_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Part $part): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $updatedPart = $this->partService->updatePart($part, $requestData);
-        return $this->json($updatedPart, JsonResponse::HTTP_OK);
+
+        if (!$requestData) {
+            return $this->json(['error' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $this->partService->updatePart($part, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_part_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'app_part_delete', methods: ['DELETE'])]
     public function delete(Part $part): JsonResponse
     {
-        $this->partService->deletePart($part);
-        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
+        try {
+            $this->partService->deletePart($part);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }
+

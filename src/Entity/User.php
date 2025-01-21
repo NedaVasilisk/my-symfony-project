@@ -4,17 +4,18 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: "users")]
-class User
+class User implements PasswordAuthenticatedUserInterface, UserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(length: 50, unique: true)]
-    #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
     #[Groups(['user_list', 'user_detail'])]
     private ?int $id = null;
@@ -78,12 +79,17 @@ class User
         return $this;
     }
 
-    public function getPasswordHash(): ?string
+    public function getUserIdentifier(): string
+    {
+        return $this->username;
+    }
+
+    public function getPassword(): ?string
     {
         return $this->passwordHash;
     }
 
-    public function setPasswordHash(string $passwordHash): self
+    public function setPassword(string $passwordHash): self
     {
         $this->passwordHash = $passwordHash;
         return $this;
@@ -127,6 +133,15 @@ class User
         return $this->role;
     }
 
+    public function getRoles(): array
+    {
+        if ($this->role) {
+            return [$this->role->getRoleName()];
+        }
+
+        return ['ROLE_USER'];
+    }
+
     public function setRole(?Role $role): self
     {
         $this->role = $role;
@@ -153,5 +168,10 @@ class User
     {
         $this->createdAt = $createdAt;
         return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+
     }
 }

@@ -23,11 +23,9 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
-     * Отримує список User з фільтрацією та пагінацією.
-     *
-     * @param array $data Фільтри
-     * @param int $itemsPerPage Кількість елементів на сторінку
-     * @param int $page Номер сторінки
+     * @param array $data
+     * @param int $itemsPerPage
+     * @param int $page
      * @return array
      */
     public function getAllUsersByFilter(array $data, int $itemsPerPage, int $page): array
@@ -97,11 +95,9 @@ class UserRepository extends ServiceEntityRepository
                 }
             }
         } else {
-            // За замовчуванням сортування за ID
             $queryBuilder->orderBy('u.id', 'ASC');
         }
 
-        // Пагінація
         $paginator = new Paginator($queryBuilder);
         $totalItems = count($paginator);
         $pagesCount = ceil($totalItems / $itemsPerPage);

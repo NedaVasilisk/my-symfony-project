@@ -23,8 +23,6 @@ class ServiceRepository extends ServiceEntityRepository
     }
 
     /**
-     * Отримує список Service з фільтрацією та пагінацією.
-     *
      * @param array $data Фільтри
      * @param int $itemsPerPage Кількість елементів на сторінку
      * @param int $page Номер сторінки

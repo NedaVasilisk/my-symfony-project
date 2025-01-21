@@ -8,63 +8,74 @@ use App\Service\RepairAssignmentService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/repair-assignment')]
+#[Route('api/repairs/{repairId}/assignments')]
 class RepairAssignmentController extends AbstractController
 {
-    public function __construct(private RepairAssignmentService $repairAssignmentService) {}
+    public function __construct(private readonly RepairAssignmentService $repairAssignmentService) {}
 
     #[Route('/', name: 'app_repair_assignment_index', methods: ['GET'])]
-    public function index(RepairAssignmentRepository $repairAssignmentRepository): JsonResponse
-    {
-        $repairAssignments = $repairAssignmentRepository->findAll();
-        return $this->json($repairAssignments, JsonResponse::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
-    }
-
-    #[Route('/collection', name: 'app_repair_assignment_collection', methods: ['GET'])]
-    public function getCollection(Request $request, RepairAssignmentRepository $repairAssignmentRepository): JsonResponse
+    public function index(int $repairId, Request $request, RepairAssignmentRepository $repairAssignmentRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
         $page = isset($requestData['page']) ? max((int)$requestData['page'], 1) : 1;
 
+        $requestData['repair_id'] = $repairId;
+
         $repairAssignmentsData = $repairAssignmentRepository->getAllRepairAssignmentsByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json(
-            $repairAssignmentsData,
-            JsonResponse::HTTP_OK,
-            [],
-            ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]
-        );
+        return $this->json($repairAssignmentsData, Response::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
     }
 
-    #[Route('/create', name: 'app_repair_assignment_create', methods: ['POST'])]
-    public function create(Request $request): JsonResponse
+    #[Route('/', name: 'app_repair_assignment_create', methods: ['POST'])]
+    public function create(int $repairId, Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $repairAssignment = $this->repairAssignmentService->createRepairAssignment($requestData);
-        return $this->json($repairAssignment, JsonResponse::HTTP_CREATED);
+
+        $requestData['repair_id'] = $repairId;
+
+        $this->repairAssignmentService->createRepairAssignment($requestData);
+
+        return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'app_repair_assignment_show', methods: ['GET'])]
-    public function show(RepairAssignment $repairAssignment): JsonResponse
+    public function show(int $repairId, RepairAssignment $repairAssignment): JsonResponse
     {
-        return $this->json($repairAssignment, JsonResponse::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
+        if ($repairAssignment->getRepair()->getId() !== $repairId) {
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
+        }
+
+        return $this->json($repairAssignment, Response::HTTP_OK, [], ['groups' => ['repair_assignment_detail', 'repair_list', 'employee_list']]);
     }
 
-    #[Route('/{id}/edit', name: 'app_repair_assignment_edit', methods: ['PUT', 'PATCH'])]
-    public function edit(Request $request, RepairAssignment $repairAssignment): JsonResponse
+    #[Route('/{id}', name: 'app_repair_assignment_edit', methods: ['PUT', 'PATCH'])]
+    public function edit(int $repairId, Request $request, RepairAssignment $repairAssignment): JsonResponse
     {
+        if ($repairAssignment->getRepair()->getId() !== $repairId) {
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
+        }
+
         $requestData = json_decode($request->getContent(), true);
-        $updatedRepairAssignment = $this->repairAssignmentService->updateRepairAssignment($repairAssignment, $requestData);
-        return $this->json($updatedRepairAssignment, JsonResponse::HTTP_OK);
+
+        $this->repairAssignmentService->updateRepairAssignment($repairAssignment, $requestData);
+
+        return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK, [], ['groups' => ['repair_assignment_detail']]);
     }
 
-    #[Route('/{id}/delete', name: 'app_repair_assignment_delete', methods: ['DELETE'])]
-    public function delete(RepairAssignment $repairAssignment): JsonResponse
+    #[Route('/{id}', name: 'app_repair_assignment_delete', methods: ['DELETE'])]
+    public function delete(int $repairId, RepairAssignment $repairAssignment): JsonResponse
     {
+        if ($repairAssignment->getRepair()->getId() !== $repairId) {
+            throw $this->createNotFoundException('Repair assignment not found for this repair');
+        }
+
         $this->repairAssignmentService->deleteRepairAssignment($repairAssignment);
-        return $this->json(null, JsonResponse::HTTP_NO_CONTENT);
+
+        return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
     }
 }
+

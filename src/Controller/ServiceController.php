@@ -5,26 +5,20 @@ namespace App\Controller;
 use App\Entity\Service;
 use App\Repository\ServiceRepository;
 use App\Service\ServiceService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/service')]
+#[Route('api/services')]
 class ServiceController extends AbstractController
 {
-    public function __construct(private ServiceService $serviceService) {}
+    public function __construct(private readonly ServiceService $serviceService) {}
 
     #[Route('/', name: 'app_service_index', methods: ['GET'])]
-    public function index(ServiceRepository $serviceRepository): JsonResponse
-    {
-        $services = $serviceRepository->findAll();
-        return $this->json($services, Response::HTTP_OK);
-    }
-
-    #[Route('/collection', name: 'app_service_collection', methods: ['GET'])]
-    public function getCollection(Request $request, ServiceRepository $serviceRepository): JsonResponse
+    public function index(Request $request, ServiceRepository $serviceRepository): JsonResponse
     {
         $requestData = $request->query->all();
         $itemsPerPage = isset($requestData['itemsPerPage']) ? max((int)$requestData['itemsPerPage'], 1) : 10;
@@ -32,15 +26,20 @@ class ServiceController extends AbstractController
 
         $servicesData = $serviceRepository->getAllServicesByFilter($requestData, $itemsPerPage, $page);
 
-        return $this->json($servicesData, JsonResponse::HTTP_OK, [], ['groups' => ['service_detail']]);
+        return $this->json($servicesData, Response::HTTP_OK, [], ['groups' => ['service_detail']]);
     }
 
-    #[Route('/create', name: 'app_service_create', methods: ['POST'])]
+    #[Route('/', name: 'app_service_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $service = $this->serviceService->createService($requestData);
-        return $this->json($service, Response::HTTP_CREATED);
+
+        try {
+            $this->serviceService->createService($requestData);
+            return $this->json(['message' => 'Successfully created'], Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
     #[Route('/{id}', name: 'app_service_show', methods: ['GET'])]
@@ -49,18 +48,27 @@ class ServiceController extends AbstractController
         return $this->json($service, Response::HTTP_OK);
     }
 
-    #[Route('/{id}/edit', name: 'app_service_edit', methods: ['PUT', 'PATCH'])]
+    #[Route('/{id}', name: 'app_service_edit', methods: ['PUT', 'PATCH'])]
     public function edit(Request $request, Service $service): JsonResponse
     {
         $requestData = json_decode($request->getContent(), true);
-        $updatedService = $this->serviceService->updateService($service, $requestData);
-        return $this->json($updatedService, Response::HTTP_OK);
+
+        try {
+            $this->serviceService->updateService($service, $requestData);
+            return $this->json(['message' => 'Successfully updated'], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 
-    #[Route('/{id}/delete', name: 'app_service_delete', methods: ['DELETE'])]
+    #[Route('/{id}', name: 'app_service_delete', methods: ['DELETE'])]
     public function delete(Service $service): JsonResponse
     {
-        $this->serviceService->deleteService($service);
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        try {
+            $this->serviceService->deleteService($service);
+            return $this->json(['message' => 'Successfully deleted'], Response::HTTP_NO_CONTENT);
+        } catch (Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
     }
 }
