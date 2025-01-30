@@ -21,8 +21,14 @@ class AuthenticationSuccessListener
     public function onAuthenticationSuccess(AuthenticationSuccessEvent $event): void
     {
         $user = $event->getUser();
-
         if (!$user instanceof User) {
+            return;
+        }
+
+        $data = $event->getData();
+
+        $jwtToken = $data['token'] ?? null;
+        if (!$jwtToken) {
             return;
         }
 
@@ -31,13 +37,10 @@ class AuthenticationSuccessListener
             'exp' => time() + 3600 * 24 * 7,
         ]);
 
-        $data = $event->getData();
-        $data['refresh_token'] = $refreshToken;
-        $event->setData($data);
+        $event->setData([
+            'token' => $jwtToken,
+            'refresh_token' => $refreshToken,
+        ]);
 
-        $response = $event->getResponse();
-        $response->headers->setCookie(
-            Cookie::create('REFRESH_TOKEN', $refreshToken, time() + 3600 * 24 * 7, '/', null, true, true, false, 'Strict')
-        );
     }
 }

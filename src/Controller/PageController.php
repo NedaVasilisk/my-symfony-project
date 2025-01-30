@@ -15,7 +15,7 @@ class PageController extends AbstractController
         return $this->render("home/index.html.twig");
     }
 
-    #[Route('/{page}', name: 'page', requirements: ['page' => 'home|about|contact|auth'])]
+    #[Route('/{page}', name: 'page', requirements: ['page' => 'home|about|contact|auth|profile'])]
     public function index(string $page): Response
     {
         return $this->render("{$page}/index.html.twig");

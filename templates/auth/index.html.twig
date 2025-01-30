@@ -108,12 +108,15 @@
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({ email, password }),
+                        credentials: 'include'
                     });
 
                     const result = await response.json();
                     if (response.ok) {
-                        alert('Login successful!');
-                        window.location.href = '/dashboard';
+                        localStorage.setItem('ACCESS_TOKEN', result.token);
+                        localStorage.setItem('REFRESH_TOKEN', result.refresh_token);
+
+                        window.location.href = '/profile';
                     } else {
                         alert(result.message || 'Login failed');
                     }
