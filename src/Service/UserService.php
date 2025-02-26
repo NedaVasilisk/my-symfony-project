@@ -40,11 +40,10 @@ class UserService
 
     private function fillUserData(User $user, array $data): void
     {
-        $user->setUsername($data['username'] ?? $user->getUsername());
+        $user->setEmail($data['email'] ?? $user->getEmail());
         $user->setPassword($data['passwordHash'] ?? $user->getPassword());
         $user->setFirstName($data['firstName'] ?? $user->getFirstName());
         $user->setLastName($data['lastName'] ?? $user->getLastName());
-        $user->setEmail($data['email'] ?? $user->getEmail());
         $user->setIsActive($data['isActive'] ?? $user->isActive());
 
         if (isset($data['created_at'])) {

@@ -31,12 +31,7 @@ class RegistrationController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['username']) || empty($data['password']) || empty($data['email'])) {
-            return new JsonResponse(['error' => 'Username, password, and email are required.'], Response::HTTP_BAD_REQUEST);
-        }
-
         $user = new User();
-        $user->setUsername($data['username']);
         $user->setEmail($data['email']);
         $user->setFirstName($data['firstName'] ?? '');
         $user->setLastName($data['lastName'] ?? '');
@@ -47,7 +42,7 @@ class RegistrationController
         $user->setPassword($hashedPassword);
 
         $roleRepository = $this->entityManager->getRepository(Role::class);
-        $role = $roleRepository->findOneBy(['roleName' => 'ROLE_USER']); // Знайти роль "ROLE_USER"
+        $role = $roleRepository->findOneBy(['roleName' => 'ROLE_USER']);
         if ($role) {
             $user->setRole($role);
         } else {
@@ -61,7 +56,6 @@ class RegistrationController
 
         try {
             $this->userService->createUser([
-                'username' => $user->getUsername(),
                 'passwordHash' => $user->getPassword(),
                 'email' => $user->getEmail(),
                 'firstName' => $user->getFirstName(),

@@ -37,9 +37,9 @@ class UserRepository extends ServiceEntityRepository
                 ->setParameter('id', $data['id']);
         }
 
-        if (isset($data['username'])) {
-            $queryBuilder->andWhere('u.username LIKE :username')
-                ->setParameter('username', '%' . $data['username'] . '%');
+        if (isset($data['email'])) {
+            $queryBuilder->andWhere('u.email LIKE :email')
+                ->setParameter('email', '%' . $data['email'] . '%');
         }
 
         if (isset($data['firstName'])) {
@@ -50,11 +50,6 @@ class UserRepository extends ServiceEntityRepository
         if (isset($data['lastName'])) {
             $queryBuilder->andWhere('u.lastName LIKE :lastName')
                 ->setParameter('lastName', '%' . $data['lastName'] . '%');
-        }
-
-        if (isset($data['email'])) {
-            $queryBuilder->andWhere('u.email LIKE :email')
-                ->setParameter('email', '%' . $data['email'] . '%');
         }
 
         if (isset($data['role'])) {
@@ -87,7 +82,7 @@ class UserRepository extends ServiceEntityRepository
             $sortParams = explode(',', $data['sort']);
             if (count($sortParams) === 2) {
                 [$sortField, $sortOrder] = $sortParams;
-                $allowedSortFields = ['id', 'username', 'firstName', 'lastName', 'email', 'createdAt'];
+                $allowedSortFields = ['id', 'firstName', 'lastName', 'email', 'createdAt'];
                 $allowedSortOrder = ['asc', 'desc'];
 
                 if (in_array($sortField, $allowedSortFields) && in_array(strtolower($sortOrder), $allowedSortOrder)) {

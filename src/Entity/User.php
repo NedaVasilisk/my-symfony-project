@@ -20,12 +20,6 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Groups(['user_list', 'user_detail'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50, unique: true)]
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 50)]
-    #[Groups(['user_detail'])]
-    private ?string $username = null;
-
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 8)]
@@ -42,7 +36,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Groups(['user_detail'])]
     private ?string $lastName = null;
 
-    #[ORM\Column(length: 100, unique: true, nullable: true)]
+    #[ORM\Column(length: 100, unique: true, nullable: false)]
     #[Assert\Email]
     #[Groups(['user_detail'])]
     private ?string $email = null;
@@ -68,20 +62,9 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this->id;
     }
 
-    public function getUsername(): ?string
-    {
-        return $this->username;
-    }
-
-    public function setUsername(string $username): self
-    {
-        $this->username = $username;
-        return $this;
-    }
-
     public function getUserIdentifier(): string
     {
-        return $this->username;
+        return $this->email;
     }
 
     public function getPassword(): ?string
